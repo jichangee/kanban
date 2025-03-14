@@ -203,7 +203,7 @@ export default function KanbanBoard() {
   return (
     <>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-center">看板应用</h1>
+        <h1 className="text-2xl font-bold text-center">看板</h1>
         {/* 添加任务按钮 */}
         <div className="">
           <button
