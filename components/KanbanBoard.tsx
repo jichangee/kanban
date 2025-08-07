@@ -38,6 +38,15 @@ export default function KanbanBoard() {
   const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
 
+  // 背景设置相关状态
+  const presetColors = [
+    '#0079bf', '#61bd4f', '#f2d600', '#ff5a5f', '#c377e0', '#344563', '#00c2e0', '#ffab4a', '#ebecf0'
+  ];
+  const [backgroundType, setBackgroundType] = useState<'color' | 'image'>('color');
+  const [backgroundColor, setBackgroundColor] = useState<string>(presetColors[0]);
+  const [backgroundImage, setBackgroundImage] = useState<string>(''); // 网络图片或 base64
+  const [isBgModalOpen, setIsBgModalOpen] = useState(false);
+
   // 从本地存储加载数据（兼容老数据，自动插入测试中列）
   useEffect(() => {
     const savedColumns = localStorage.getItem('kanbanColumns');
@@ -71,6 +80,42 @@ export default function KanbanBoard() {
   useEffect(() => {
     localStorage.setItem('kanbanAutomationRules', JSON.stringify(automationRules));
   }, [automationRules]);
+
+  // 加载背景设置
+  useEffect(() => {
+    const bgType = localStorage.getItem('kanbanBgType');
+    const bgColor = localStorage.getItem('kanbanBgColor');
+    const bgImg = localStorage.getItem('kanbanBgImg');
+    if (bgType === 'image' && bgImg) {
+      setBackgroundType('image');
+      setBackgroundImage(bgImg);
+    } else if (bgColor) {
+      setBackgroundType('color');
+      setBackgroundColor(bgColor);
+    }
+  }, []);
+  // 持久化背景设置
+  useEffect(() => {
+    localStorage.setItem('kanbanBgType', backgroundType);
+    if (backgroundType === 'color') {
+      localStorage.setItem('kanbanBgColor', backgroundColor);
+    } else if (backgroundType === 'image') {
+      localStorage.setItem('kanbanBgImg', backgroundImage);
+    }
+  }, [backgroundType, backgroundColor, backgroundImage]);
+
+  // 处理本地图片上传
+  const handleBgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setBackgroundImage(ev.target?.result as string);
+        setBackgroundType('image');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   // 添加新任务
   const handleAddTask = (task: Task) => {
@@ -275,9 +320,16 @@ export default function KanbanBoard() {
   };
   
   return (
-    <div className="min-h-screen bg-[#0079bf]">
+    <div
+      className="min-h-screen"
+      style={
+        backgroundType === 'image' && backgroundImage
+          ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+          : { background: backgroundColor }
+      }
+    >
       {/* 顶部导航栏 */}
-      <div className="bg-[#026aa7] shadow-sm border-b border-[#005a8b]">
+      <div className="nav-glass shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -289,6 +341,12 @@ export default function KanbanBoard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setIsBgModalOpen(true)}
+                className="btn-secondary text-sm px-3 py-2 rounded"
+              >
+                🎨 更换背景
+              </button>
               <button
                 onClick={() => setIsAutomationModalOpen(true)}
                 className="btn-secondary text-sm px-3 py-2 rounded"
@@ -345,6 +403,69 @@ export default function KanbanBoard() {
                   ))}
                 </ul>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 更换背景模态框 */}
+      {isBgModalOpen && (
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="modal-content w-full max-w-md max-h-[90vh] overflow-y-auto text-[#172b4d]">
+            <div className="flex items-center justify-between p-6 border-b border-[#dfe1e6]">
+              <h2 className="text-xl font-semibold">更换背景</h2>
+              <button onClick={() => setIsBgModalOpen(false)} className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100">×</button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="mb-4">
+                <label className="mr-4 font-medium">
+                  <input
+                    type="radio"
+                    name="bgType"
+                    checked={backgroundType === 'color'}
+                    onChange={() => setBackgroundType('color')}
+                  />
+                  <span className="ml-1">背景色</span>
+                </label>
+                <label className="font-medium">
+                  <input
+                    type="radio"
+                    name="bgType"
+                    checked={backgroundType === 'image'}
+                    onChange={() => setBackgroundType('image')}
+                  />
+                  <span className="ml-1">背景图片</span>
+                </label>
+              </div>
+              {backgroundType === 'color' && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {presetColors.map(color => (
+                    <button
+                      key={color}
+                      className="w-8 h-8 rounded border-2"
+                      style={{ background: color, borderColor: backgroundColor === color ? '#333' : '#fff' }}
+                      onClick={() => setBackgroundColor(color)}
+                    />
+                  ))}
+                </div>
+              )}
+              {backgroundType === 'image' && (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    className="input-field w-full"
+                    placeholder="输入图片链接..."
+                    value={backgroundImage.startsWith('data:') ? '' : backgroundImage}
+                    onChange={e => setBackgroundImage(e.target.value)}
+                  />
+                  <div className="flex items-center gap-2">
+                    <input type="file" accept="image/*" onChange={handleBgFileChange} />
+                    <span className="text-xs text-[#5e6c84]">或上传本地图片</span>
+                  </div>
+                  {backgroundImage && (
+                    <img src={backgroundImage} alt="预览" className="w-full h-32 object-cover rounded mt-2" />
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
