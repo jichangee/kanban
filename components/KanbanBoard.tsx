@@ -11,6 +11,7 @@ export default function KanbanBoard() {
   const [columns, setColumns] = useState<Column[]>([
     { id: 1, title: '待办', tasks: [] },
     { id: 2, title: '进行中', tasks: [] },
+    { id: 5, title: '测试中', tasks: [] },
     { id: 3, title: '已完成', tasks: [] },
     { id: 4, title: '回收站', tasks: [], hide: true }
   ]);
@@ -24,11 +25,18 @@ export default function KanbanBoard() {
   // 拖拽状态
   const [draggedTask, setDraggedTask] = useState<DraggedTask | null>(null);
   
-  // 从本地存储加载数据
+  // 从本地存储加载数据（兼容老数据，自动插入测试中列）
   useEffect(() => {
     const savedColumns = localStorage.getItem('kanbanColumns');
     if (savedColumns) {
-      setColumns(JSON.parse(savedColumns));
+      let loaded = JSON.parse(savedColumns);
+      // 检查是否有“测试中”列
+      if (!loaded.find((col: Column) => col.id === 5)) {
+        // 插入“测试中”列到“进行中”与“已完成”之间
+        const idx = loaded.findIndex((col: Column) => col.id === 3);
+        loaded.splice(idx, 0, { id: 5, title: '测试中', tasks: [] });
+      }
+      setColumns(loaded);
     }
   }, []);
   
@@ -201,32 +209,55 @@ export default function KanbanBoard() {
   };
   
   return (
-    <>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-center">看板</h1>
-        {/* 添加任务按钮 */}
-        <div className="">
-          <button
-            onClick={openAddModal}
-            className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            添加新任务
-          </button>
+    <div className="min-h-screen bg-[#0079bf]">
+      {/* 顶部导航栏 */}
+      <div className="bg-[#026aa7] shadow-sm border-b border-[#005a8b]">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
+                  <span className="text-[#0079bf] font-bold text-lg">K</span>
+                </div>
+                <h1 className="text-white font-semibold text-xl">看板</h1>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={openAddModal}
+                className="btn-primary text-sm px-4 py-2 rounded"
+              >
+                + 添加任务
+              </button>
+              
+              <button
+                onClick={() => setIsTrashModalOpen(true)}
+                className="btn-secondary text-sm px-3 py-2 rounded"
+                aria-label="回收站"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-      {/* 看板列 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {columns.filter(item => !item.hide).map(column => (
-          <ColumnComponent
-            key={column.id}
-            column={column}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            onDragStart={onDragStart}
-            onDeleteTask={deleteTask}
-            onEditTask={openEditModal}
-          />
-        ))}
+      
+      {/* 看板内容区域 */}
+      <div className="flex-1 p-4">
+        <div className="flex space-x-4 overflow-x-auto pb-4">
+          {columns.filter(item => !item.hide).map(column => (
+            <ColumnComponent
+              key={column.id}
+              column={column}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              onDragStart={onDragStart}
+              onDeleteTask={deleteTask}
+              onEditTask={openEditModal}
+            />
+          ))}
+        </div>
       </div>
       
       {/* 任务模态框 */}
@@ -242,15 +273,6 @@ export default function KanbanBoard() {
         />
       )}
 
-      {/* 回收站按钮 */}
-      <button
-        onClick={() => setIsTrashModalOpen(true)}
-        className="fixed bottom-6 right-6 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-colors"
-        aria-label="打开回收站"
-      >
-        🗑️
-      </button>
-
       {/* 回收站模态框 */}
       {isTrashModalOpen && (
         <TrashModal
@@ -260,6 +282,6 @@ export default function KanbanBoard() {
           onClose={() => setIsTrashModalOpen(false)}
         />
       )}
-    </>
+    </div>
   );
 }

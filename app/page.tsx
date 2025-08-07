@@ -5,8 +5,8 @@ import KanbanBoard from '@/components/KanbanBoard';
 
 export default function Home() {
   return (
-    <main className="container mx-auto p-4">
+    <div className="min-h-screen bg-[#0079bf]">
       <KanbanBoard />
-    </main>
+    </div>
   );
 }

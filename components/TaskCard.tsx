@@ -26,13 +26,13 @@ export default function TaskCard({
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 border-red-300';
+        return 'border-l-4 border-l-red-500';
       case 'medium':
-        return 'bg-yellow-100 border-yellow-300';
+        return 'border-l-4 border-l-yellow-500';
       case 'low':
-        return 'bg-green-100 border-green-300';
+        return 'border-l-4 border-l-green-500';
       default:
-        return 'bg-gray-50 border-gray-200';
+        return '';
     }
   };
 
@@ -65,40 +65,94 @@ export default function TaskCard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       className={`
-        task-card p-3 rounded border flex flex-col cursor-move 
+        task-card bg-white rounded-lg shadow-sm border border-[#dfe1e6] p-3 cursor-move group
         ${getPriorityColor(task.priority)}
-        transition-all duration-200 ease-in-out
-        ${isDragging ? 'opacity-50 scale-105 shadow-lg rotate-1' : 'hover:shadow-md hover:-translate-y-0.5'}
+        transition-all duration-200 ease-in-out card-hover
+        ${isDragging ? 'dragging' : ''}
       `}
     >
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex-1">
-          <span className="font-medium">{task.content}</span>
-          {task.link && (
-            <a
-              href={task.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-2 text-blue-500 hover:text-blue-700 text-sm"
-              onClick={(e) => e.stopPropagation()}
+      {/* 任务内容 */}
+      <div className="mb-3">
+        <p className="text-[#172b4d] text-sm font-medium leading-relaxed">
+          {task.content}
+        </p>
+        {task.link && (
+          <a
+            href={task.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-[#0079bf] hover:text-[#005a8b] text-xs mt-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="mr-1">🔗</span>
+            查看链接
+          </a>
+        )}
+      </div>
+
+      {/* 任务描述 */}
+      {task.description && (
+        <div className="text-xs text-[#5e6c84] mb-3 line-clamp-2 leading-relaxed">
+          {task.description}
+        </div>
+      )}
+      
+      {/* 标签区域 */}
+      {task.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {task.tags.map((tag, index) => (
+            <span 
+              key={index}
+              className="inline-block px-2 py-1 bg-[#e4f0f6] text-[#0079bf] text-xs rounded font-medium"
             >
-              🔗
-            </a>
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+      
+      {/* 底部信息栏 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          {/* 优先级标签 */}
+          <span 
+            className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+              task.priority === 'high' ? 'bg-red-100 text-red-700' : 
+              task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 
+              'bg-green-100 text-green-700'
+            }`}
+          >
+            {task.priority === 'high' ? '高' : 
+             task.priority === 'medium' ? '中' : '低'}
+          </span>
+          
+          {/* 到期时间 */}
+          {task.dueDate && (
+            <span className={`text-xs px-2 py-1 rounded ${
+              isOverdue 
+                ? 'bg-red-100 text-red-700' 
+                : 'bg-gray-100 text-gray-600'
+            }`}>
+              {formatDateTime(task.dueDate)}
+              {isOverdue && <span className="ml-1">⚠️</span>}
+            </span>
           )}
         </div>
-        <div className="flex space-x-1">
+        
+        {/* 操作按钮 */}
+        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {onRestore ? (
             <>
               <button
                 onClick={() => onRestore(task.id)}
-                className="text-green-500 hover:text-green-700 text-sm p-1"
+                className="text-green-600 hover:text-green-800 text-sm p-1 rounded hover:bg-green-50"
                 aria-label="恢复任务"
               >
                 🔄
               </button>
               <button
                 onClick={() => onDelete(columnId, task.id)}
-                className="text-red-500 hover:text-red-700 text-sm p-1"
+                className="text-red-600 hover:text-red-800 text-sm p-1 rounded hover:bg-red-50"
                 aria-label="永久删除"
               >
                 🗑️
@@ -108,14 +162,14 @@ export default function TaskCard({
             <>
               <button
                 onClick={() => onEdit(columnId, task)}
-                className="text-blue-500 hover:text-blue-700 text-sm p-1"
+                className="text-[#0079bf] hover:text-[#005a8b] text-sm p-1 rounded hover:bg-blue-50"
                 aria-label="编辑任务"
               >
                 ✏️
               </button>
               <button
                 onClick={() => onDelete(columnId, task.id)}
-                className="text-red-500 hover:text-red-700 text-sm p-1"
+                className="text-red-600 hover:text-red-800 text-sm p-1 rounded hover:bg-red-50"
                 aria-label="删除任务"
               >
                 ❌
@@ -124,50 +178,6 @@ export default function TaskCard({
           )}
         </div>
       </div>
-
-      {/* 任务描述 */}
-      {task.description && (
-        <div className="text-sm text-gray-600 mb-2 line-clamp-2">
-          {task.description}
-        </div>
-      )}
-      
-      {/* 到期时间 */}
-      {task.dueDate && (
-        <div className={`text-xs mb-2 ${isOverdue ? 'text-red-500' : 'text-gray-500'}`}>
-          <span className="font-medium">到期时间：</span>
-          {formatDateTime(task.dueDate)}
-          {isOverdue && <span className="ml-1">(已过期)</span>}
-        </div>
-      )}
-      
-      {/* 优先级标签 */}
-      <div className="flex items-center text-xs mb-2">
-        <span 
-          className={`inline-block px-2 py-1 rounded-full mr-2 ${
-            task.priority === 'high' ? 'bg-red-400 text-white' : 
-            task.priority === 'medium' ? 'bg-yellow-400 text-black' : 
-            'bg-green-400 text-white'
-          }`}
-        >
-          {task.priority === 'high' ? '高优' : 
-           task.priority === 'medium' ? '中优' : '低优'}
-        </span>
-      </div>
-      
-      {/* 标签区域 */}
-      {task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1">
-          {task.tags.map((tag, index) => (
-            <span 
-              key={index}
-              className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
