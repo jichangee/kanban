@@ -8,7 +8,7 @@ export interface Task {
   tags: string[];
   dueDate: string | null;
   order: number;
-  link: string | null;
+  links: string[];
 }
 
 export interface Column {

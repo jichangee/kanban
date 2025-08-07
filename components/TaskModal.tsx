@@ -22,7 +22,8 @@ export default function TaskModal({
   const [tags, setTags] = useState<string[]>(task?.tags || []);
   const [newTag, setNewTag] = useState('');
   const [dueDate, setDueDate] = useState(task?.dueDate || '');
-  const [link, setLink] = useState(task?.link || '');
+  const [links, setLinks] = useState<string[]>(task?.links || []);
+  const [newLink, setNewLink] = useState('');
 
   useEffect(() => {
     const handleEscKey = (e: KeyboardEvent) => {
@@ -47,7 +48,7 @@ export default function TaskModal({
       priority,
       tags,
       dueDate: dueDate || null,
-      link: link || null,
+      links,
       order: task?.order || 0
     };
     
@@ -66,6 +67,20 @@ export default function TaskModal({
 
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleAddLink = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newLink.trim()) {
+      e.preventDefault();
+      if (!links.includes(newLink.trim())) {
+        setLinks([...links, newLink.trim()]);
+      }
+      setNewLink('');
+    }
+  };
+
+  const removeLink = (linkToRemove: string) => {
+    setLinks(links.filter(link => link !== linkToRemove));
   };
 
   return (
@@ -121,11 +136,31 @@ export default function TaskModal({
             </label>
             <input
               type="url"
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
+              value={newLink}
+              onChange={(e) => setNewLink(e.target.value)}
+              onKeyDown={handleAddLink}
               className="input-field w-full"
-              placeholder="https://example.com"
+              placeholder="输入链接后按回车添加"
             />
+            {links.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {links.map((link, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-[#e4f0f6] text-[#0079bf] rounded-full text-sm font-medium flex items-center"
+                  >
+                    <a href={link} target="_blank" rel="noopener noreferrer" className="text-[#0079bf] hover:underline max-w-xs truncate">{link}</a>
+                    <button
+                      type="button"
+                      onClick={() => removeLink(link)}
+                      className="ml-2 text-[#0079bf] hover:text-[#005a8b] font-bold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 优先级和截止日期 */}

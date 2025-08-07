@@ -76,17 +76,35 @@ export default function TaskCard({
         <p className="text-[#172b4d] text-sm font-medium leading-relaxed">
           {task.content}
         </p>
-        {task.link && (
-          <a
-            href={task.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center text-[#0079bf] hover:text-[#005a8b] text-xs mt-1"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="mr-1">🔗</span>
-            查看链接
-          </a>
+        {task.links && task.links.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {task.links.map((link, index) => {
+              // 提取域名作为显示名称
+              let displayName = `链接 ${index + 1}`;
+              try {
+                const url = new URL(link);
+                displayName = url.hostname;
+              } catch (e) {
+                // 如果URL解析失败，使用原始链接的前20个字符
+                displayName = link.length > 20 ? link.substring(0, 20) + '...' : link;
+              }
+              
+              return (
+                <a
+                  key={index}
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex mr-2 items-center text-[#0079bf] hover:text-[#005a8b] text-xs bg-[#f4f5f7] px-2 py-1 rounded hover:bg-[#e4f0f6] transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                  title={link}
+                >
+                  <span className="mr-1">🔗</span>
+                  {displayName}
+                </a>
+              );
+            })}
+          </div>
         )}
       </div>
 

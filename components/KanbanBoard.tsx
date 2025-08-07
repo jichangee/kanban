@@ -6,6 +6,14 @@ import ColumnComponent from '@/components/Column';
 import TaskModal from '@/components/TaskModal';
 import TrashModal from '@/components/TrashModal';
 
+// 自动化规则类型
+type AutomationRule = {
+  id: number;
+  name: string;
+  regex: string;
+  linkTemplate: string;
+};
+
 export default function KanbanBoard() {
   // 看板数据状态
   const [columns, setColumns] = useState<Column[]>([
@@ -25,6 +33,11 @@ export default function KanbanBoard() {
   // 拖拽状态
   const [draggedTask, setDraggedTask] = useState<DraggedTask | null>(null);
   
+  // 自动化规则状态
+  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+  const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
+
   // 从本地存储加载数据（兼容老数据，自动插入测试中列）
   useEffect(() => {
     const savedColumns = localStorage.getItem('kanbanColumns');
@@ -44,14 +57,50 @@ export default function KanbanBoard() {
   useEffect(() => {
     localStorage.setItem('kanbanColumns', JSON.stringify(columns));
   }, [columns]);
+
+  // 加载自动化规则
+  useEffect(() => {
+    const saved = localStorage.getItem('kanbanAutomationRules');
+    if (saved) {
+      setAutomationRules(JSON.parse(saved));
+    } else {
+      setAutomationRules([]);
+    }
+  }, []);
+  // 保存自动化规则
+  useEffect(() => {
+    localStorage.setItem('kanbanAutomationRules', JSON.stringify(automationRules));
+  }, [automationRules]);
   
   // 添加新任务
   const handleAddTask = (task: Task) => {
+    let newTask = { ...task };
+    // 初始化links数组
+    if (!newTask.links) {
+      newTask.links = [];
+    }
+    
+    // 自动化处理
+    for (const rule of automationRules) {
+      try {
+        const reg = new RegExp(rule.regex);
+        const match = newTask.content.match(reg);
+        if (match) {
+          // 替换模板中的$1、$2等
+          let link = rule.linkTemplate;
+          match.forEach((m, idx) => {
+            link = link.replace(new RegExp(`\\$${idx}`,'g'), m);
+          });
+          // 添加到links数组而不是覆盖
+          newTask.links.push(link);
+        }
+      } catch (e) { /* 忽略无效正则 */ }
+    }
+    
     const updatedColumns = [...columns];
     const column = updatedColumns[0];
-    // 设置新任务的顺序为当前列最后一个
-    const newTask = {
-      ...task,
+    newTask = {
+      ...newTask,
       order: column.tasks.length
     };
     column.tasks.push(newTask);
@@ -207,6 +256,23 @@ export default function KanbanBoard() {
     setColumns(updatedColumns);
     setDraggedTask(null);
   };
+
+  // 自动化规则表单相关
+  const [ruleForm, setRuleForm] = useState({ name: '', regex: '', linkTemplate: '' });
+  const handleRuleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRuleForm({ ...ruleForm, [e.target.name]: e.target.value });
+  };
+  const handleAddRule = () => {
+    if (!ruleForm.name || !ruleForm.regex || !ruleForm.linkTemplate) return;
+    setAutomationRules([
+      ...automationRules,
+      { id: Date.now(), ...ruleForm }
+    ]);
+    setRuleForm({ name: '', regex: '', linkTemplate: '' });
+  };
+  const handleDeleteRule = (id: number) => {
+    setAutomationRules(automationRules.filter(r => r.id !== id));
+  };
   
   return (
     <div className="min-h-screen bg-[#0079bf]">
@@ -222,15 +288,19 @@ export default function KanbanBoard() {
                 <h1 className="text-white font-semibold text-xl">看板</h1>
               </div>
             </div>
-            
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setIsAutomationModalOpen(true)}
+                className="btn-secondary text-sm px-3 py-2 rounded"
+              >
+                ⚙️ 自动化规则
+              </button>
               <button
                 onClick={openAddModal}
                 className="btn-primary text-sm px-4 py-2 rounded"
               >
                 + 添加任务
               </button>
-              
               <button
                 onClick={() => setIsTrashModalOpen(true)}
                 className="btn-secondary text-sm px-3 py-2 rounded"
@@ -242,7 +312,43 @@ export default function KanbanBoard() {
           </div>
         </div>
       </div>
-      
+      {/* 自动化规则模态框 */}
+      {isAutomationModalOpen && (
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="modal-content w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-[#dfe1e6]">
+              <h2 className="text-xl font-semibold text-[#172b4d]">自动化规则</h2>
+              <button onClick={() => setIsAutomationModalOpen(false)} className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100">×</button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-[#172b4d] mb-2">规则名称</label>
+                <input name="name" value={ruleForm.name} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：数字转链接" />
+                <label className="block text-sm font-medium text-[#172b4d] mb-2">正则表达式</label>
+                <input name="regex" value={ruleForm.regex} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：(\d+)" />
+                <label className="block text-sm font-medium text-[#172b4d] mb-2">链接模板（用$1、$2等占位）</label>
+                <input name="linkTemplate" value={ruleForm.linkTemplate} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：https://example.com/item/$1" />
+                <button type="button" className="btn-primary mt-2" onClick={handleAddRule}>添加规则</button>
+              </div>
+              <div>
+                <h3 className="font-medium text-[#172b4d] mb-2">已添加规则</h3>
+                <ul className="space-y-2">
+                  {automationRules.map(rule => (
+                    <li key={rule.id} className="flex items-center justify-between bg-white border border-[#dfe1e6] rounded-lg px-4 py-3 shadow-sm">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm text-[#172b4d] mb-1">{rule.name}</div>
+                        <div className="text-xs text-[#5e6c84] mb-1">正则: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.regex}</code></div>
+                        <div className="text-xs text-[#5e6c84]">模板: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.linkTemplate}</code></div>
+                      </div>
+                      <button className="text-red-500 hover:text-red-700 text-sm ml-3 px-2 py-1 rounded hover:bg-red-50" onClick={() => handleDeleteRule(rule.id)}>删除</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* 看板内容区域 */}
       <div className="flex-1 p-4">
         <div className="flex space-x-4 overflow-x-auto pb-4">
