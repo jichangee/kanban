@@ -70,9 +70,8 @@ export default function TrashModal({
                   key={task.id}
                   task={task}
                   columnId={4}
-                  onDragStart={() => {}}
                   onDelete={onDelete}
-                  onEdit={() => {}}
+                  onEdit={(columnId, task) => {}}
                   onRestore={onRestore}
                 />
               ))}
