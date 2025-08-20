@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Task } from '@/types/kanban';
 
 interface TaskCardProps {
   task: Task;
   columnId: number;
-  onDragStart: (columnId: number, taskId: number, taskContent: string) => void;
   onDelete: (columnId: number, taskId: number) => void;
   onEdit: (columnId: number, task: Task) => void;
   onRestore?: (taskId: number) => void;
@@ -15,13 +14,10 @@ interface TaskCardProps {
 export default function TaskCard({
   task,
   columnId,
-  onDragStart,
   onDelete,
   onEdit,
   onRestore
 }: TaskCardProps) {
-  const [isDragging, setIsDragging] = useState(false);
-
   // 根据优先级获取颜色
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -39,15 +35,6 @@ export default function TaskCard({
   // 检查任务是否过期
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
 
-  const handleDragStart = () => {
-    setIsDragging(true);
-    onDragStart(columnId, task.id, task.content);
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
-
   // 格式化日期时间
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -61,14 +48,10 @@ export default function TaskCard({
 
   return (
     <div
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
       className={`
         task-card bg-white rounded-lg shadow-sm border border-[#dfe1e6] p-3 cursor-move group
         ${getPriorityColor(task.priority)}
         transition-all duration-200 ease-in-out card-hover
-        ${isDragging ? 'dragging' : ''}
       `}
     >
       {/* 任务内容 */}

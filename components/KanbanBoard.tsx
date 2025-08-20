@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, DragEvent } from 'react';
-import { Column, Task, DraggedTask, Priority } from '@/types/kanban';
+import React, { useState, useEffect } from 'react';
+import { DragDropContext, DropResult } from '@hello-pangea/dnd';
+import { Column, Task, Priority } from '@/types/kanban';
 import ColumnComponent from '@/components/Column';
 import TaskModal from '@/components/TaskModal';
 import TrashModal from '@/components/TrashModal';
@@ -29,9 +30,6 @@ export default function KanbanBoard() {
   const [isTrashModalOpen, setIsTrashModalOpen] = useState<boolean>(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [editingTask, setEditingTask] = useState<{task: Task, columnId: number} | null>(null);
-  
-  // 拖拽状态
-  const [draggedTask, setDraggedTask] = useState<DraggedTask | null>(null);
   
   // 自动化规则状态
   const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
@@ -134,7 +132,7 @@ export default function KanbanBoard() {
           // 替换模板中的$1、$2等
           let link = rule.linkTemplate;
           match.forEach((m, idx) => {
-            link = link.replace(new RegExp(`\\$${idx}`,'g'), m);
+            link = link.replace(new RegExp(`\${idx}`,'g'), m);
           });
           // 添加到links数组而不是覆盖
           newTask.links.push(link);
@@ -248,58 +246,35 @@ export default function KanbanBoard() {
     setIsModalOpen(true);
   };
   
-  // 拖拽相关函数
-  const onDragStart = (columnId: number, taskId: number, taskContent: string, sourceIndex: number) => {
-    setDraggedTask({ columnId, taskId, taskContent, sourceIndex });
-  };
-  
-  const onDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
-  
-  const onDrop = (columnId: number, targetIndex: number) => {
-    if (!draggedTask) return;
-    
-    const updatedColumns = [...columns];
-    const sourceColumn = updatedColumns.find(col => col.id === draggedTask.columnId);
-    if (!sourceColumn) return;
-    
-    const taskToMove = sourceColumn.tasks.find(task => task.id === draggedTask.taskId);
-    if (!taskToMove) return;
-    
-    // 从源列删除任务
-    sourceColumn.tasks = sourceColumn.tasks.filter(task => task.id !== draggedTask.taskId);
-    
-    // 如果是同一列，重新排序
-    if (columnId === draggedTask.columnId) {
-      const targetColumn = updatedColumns.find(col => col.id === columnId);
-      if (!targetColumn) return;
-      
-      // 重新计算所有任务的顺序
-      targetColumn.tasks = targetColumn.tasks.map((task, index) => ({
-        ...task,
-        order: index
-      }));
-      
-      // 在目标位置插入任务
-      targetColumn.tasks.splice(targetIndex, 0, {
-        ...taskToMove,
-        order: targetIndex
-      });
-    } else {
-      // 如果是不同列，添加到目标列
-      const targetColumn = updatedColumns.find(col => col.id === columnId);
-      if (!targetColumn) return;
-      
-      // 在目标位置插入任务
-      targetColumn.tasks.splice(targetIndex, 0, {
-        ...taskToMove,
-        order: targetIndex
-      });
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination } = result;
+
+    if (!destination) {
+      return;
     }
-    
+
+    const sourceColumnId = parseInt(source.droppableId);
+    const destColumnId = parseInt(destination.droppableId);
+
+    const updatedColumns = [...columns];
+    const sourceColumn = updatedColumns.find(col => col.id === sourceColumnId);
+    const destColumn = updatedColumns.find(col => col.id === destColumnId);
+
+    if (!sourceColumn || !destColumn) {
+      return;
+    }
+
+    const [removed] = sourceColumn.tasks.splice(source.index, 1);
+
+    if (sourceColumnId === destColumnId) {
+      // 同一列内移动
+      sourceColumn.tasks.splice(destination.index, 0, removed);
+    } else {
+      // 不同列之间移动
+      destColumn.tasks.splice(destination.index, 0, removed);
+    }
+
     setColumns(updatedColumns);
-    setDraggedTask(null);
   };
 
   // 自动化规则表单相关
@@ -471,21 +446,20 @@ export default function KanbanBoard() {
         </div>
       )}
       {/* 看板内容区域 */}
-      <div className="flex-1 p-4">
-        <div className="flex space-x-4 overflow-x-auto pb-4">
-          {columns.filter(item => !item.hide).map(column => (
-            <ColumnComponent
-              key={column.id}
-              column={column}
-              onDragOver={onDragOver}
-              onDrop={onDrop}
-              onDragStart={onDragStart}
-              onDeleteTask={deleteTask}
-              onEditTask={openEditModal}
-            />
-          ))}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="flex-1 p-4">
+          <div className="flex space-x-4 overflow-x-auto pb-4">
+            {columns.filter(item => !item.hide).map(column => (
+              <ColumnComponent
+                key={column.id}
+                column={column}
+                onDeleteTask={deleteTask}
+                onEditTask={openEditModal}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      </DragDropContext>
       
       {/* 任务模态框 */}
       {isModalOpen && (
