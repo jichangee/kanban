@@ -7,6 +7,7 @@ import ColumnComponent from '@/components/Column';
 import TaskModal from '@/components/TaskModal';
 import TrashModal from '@/components/TrashModal';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 // 自动化规则类型
 type AutomationRule = {
@@ -331,9 +332,7 @@ export default function KanbanBoard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-                  <span className="text-[#0079bf] font-bold text-lg">K</span>
-                </div>
+                <Image src="/logo.svg" alt="Logo" width={40} height={40} />
                 <h1 className="text-white font-semibold text-xl">看板</h1>
               </div>
             </div>

@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: '看板应用 | Kanban Board',
   description: 'Next.js App Router Kanban Board Application with TypeScript',
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 export default function RootLayout({
