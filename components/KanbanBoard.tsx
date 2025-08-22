@@ -133,7 +133,7 @@ export default function KanbanBoard() {
           // 替换模板中的$1、$2等
           let link = rule.linkTemplate;
           match.forEach((m, idx) => {
-            link = link.replace(new RegExp(`${idx}`,'g'), m);
+            link = link.replace(new RegExp(`\$${idx}`,'g'), m);
           });
           // 添加到links数组而不是覆盖
           newTask.links.push(link);
