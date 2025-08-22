@@ -297,6 +297,24 @@ export default function KanbanBoard() {
   const handleDeleteRule = (id: number) => {
     setAutomationRules(automationRules.filter(r => r.id !== id));
   };
+  // 开始编辑规则
+  const handleStartEditRule = (rule: AutomationRule) => {
+    setEditingRule(rule);
+    setRuleForm({ name: rule.name, regex: rule.regex, linkTemplate: rule.linkTemplate });
+  };
+  // 保存规则（编辑模式）
+  const handleUpdateRule = () => {
+    if (!editingRule) return;
+    if (!ruleForm.name || !ruleForm.regex || !ruleForm.linkTemplate) return;
+    setAutomationRules(automationRules.map(r => r.id === editingRule.id ? { ...r, ...ruleForm } : r));
+    setEditingRule(null);
+    setRuleForm({ name: '', regex: '', linkTemplate: '' });
+  };
+  // 取消编辑
+  const handleCancelEditRule = () => {
+    setEditingRule(null);
+    setRuleForm({ name: '', regex: '', linkTemplate: '' });
+  };
   
   return (
     <div
@@ -344,7 +362,14 @@ export default function KanbanBoard() {
                 <input name="regex" value={ruleForm.regex} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：(\d+)" />
                 <label className="block text-sm font-medium text-[#172b4d] mb-2">链接模板（用$1、$2等占位）</label>
                 <input name="linkTemplate" value={ruleForm.linkTemplate} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：https://example.com/item/$1" />
-                <button type="button" className="btn-primary mt-2" onClick={handleAddRule}>添加规则</button>
+                {editingRule ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    <button type="button" className="btn-primary" onClick={handleUpdateRule}>保存修改</button>
+                    <button type="button" className="btn-secondary" onClick={handleCancelEditRule}>取消</button>
+                  </div>
+                ) : (
+                  <button type="button" className="btn-primary mt-2" onClick={handleAddRule}>添加规则</button>
+                )}
               </div>
               <div>
                 <h3 className="font-medium text-[#172b4d] mb-2">已添加规则</h3>
@@ -356,7 +381,10 @@ export default function KanbanBoard() {
                         <div className="text-xs text-[#5e6c84] mb-1">正则: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.regex}</code></div>
                         <div className="text-xs text-[#5e6c84]">模板: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.linkTemplate}</code></div>
                       </div>
-                      <button className="text-red-500 hover:text-red-700 text-sm ml-3 px-2 py-1 rounded hover:bg-red-50" onClick={() => handleDeleteRule(rule.id)}>删除</button>
+                      <div className="flex items-center gap-2 ml-3">
+                        <button className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50" onClick={() => handleStartEditRule(rule)}>编辑</button>
+                        <button className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50" onClick={() => handleDeleteRule(rule.id)}>删除</button>
+                      </div>
                     </li>
                   ))}
                 </ul>
