@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { Task } from '@/types/kanban';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface TaskCardProps {
   task: Task;
@@ -47,15 +49,9 @@ export default function TaskCard({
   };
 
   return (
-    <div
-      className={`
-        task-card bg-white rounded-lg shadow-sm border border-[#dfe1e6] p-3 cursor-move group
-        ${getPriorityColor(task.priority)}
-        transition-all duration-200 ease-in-out card-hover
-      `}
-    >
+    <Card className={`task-card cursor-move group ${getPriorityColor(task.priority)} transition-all duration-200 ease-in-out card-hover`}>
       {/* 任务内容 */}
-      <div className="mb-3">
+      <CardContent className="pb-3">
         <p className="text-[#172b4d] text-sm font-medium leading-relaxed">
           {task.content}
         </p>
@@ -89,43 +85,31 @@ export default function TaskCard({
             })}
           </div>
         )}
-      </div>
+      </CardContent>
 
       {/* 任务描述 */}
       {task.description && (
-        <div className="text-xs text-[#5e6c84] mb-3 line-clamp-2 leading-relaxed">
+        <CardContent className="text-xs text-[#5e6c84] -mt-2 mb-1 line-clamp-2 leading-relaxed">
           {task.description}
-        </div>
+        </CardContent>
       )}
       
       {/* 标签区域 */}
       {task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
+        <CardContent className="flex flex-wrap gap-1 -mt-2 mb-2">
           {task.tags.map((tag, index) => (
-            <span 
-              key={index}
-              className="inline-block px-2 py-1 bg-[#e4f0f6] text-[#0079bf] text-xs rounded font-medium"
-            >
-              {tag}
-            </span>
+            <Badge key={index} className="text-[10px]">{tag}</Badge>
           ))}
-        </div>
+        </CardContent>
       )}
       
       {/* 底部信息栏 */}
-      <div className="flex items-center justify-between">
+      <CardFooter className="flex items-center justify-between pt-0">
         <div className="flex items-center space-x-2">
           {/* 优先级标签 */}
-          <span 
-            className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-              task.priority === 'high' ? 'bg-red-100 text-red-700' : 
-              task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 
-              'bg-green-100 text-green-700'
-            }`}
-          >
-            {task.priority === 'high' ? '高' : 
-             task.priority === 'medium' ? '中' : '低'}
-          </span>
+          <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'warning' : 'success'}>
+            {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+          </Badge>
           
           {/* 到期时间 */}
           {task.dueDate && (
@@ -178,7 +162,7 @@ export default function TaskCard({
             </>
           )}
         </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }

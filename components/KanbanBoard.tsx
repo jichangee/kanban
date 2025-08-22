@@ -6,6 +6,7 @@ import { Column, Task, Priority } from '@/types/kanban';
 import ColumnComponent from '@/components/Column';
 import TaskModal from '@/components/TaskModal';
 import TrashModal from '@/components/TrashModal';
+import { Button } from '@/components/ui/button';
 
 // 自动化规则类型
 type AutomationRule = {
@@ -132,7 +133,7 @@ export default function KanbanBoard() {
           // 替换模板中的$1、$2等
           let link = rule.linkTemplate;
           match.forEach((m, idx) => {
-            link = link.replace(new RegExp(`\${idx}`,'g'), m);
+            link = link.replace(new RegExp(`${idx}`,'g'), m);
           });
           // 添加到links数组而不是覆盖
           newTask.links.push(link);
@@ -316,31 +317,10 @@ export default function KanbanBoard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setIsBgModalOpen(true)}
-                className="btn-secondary text-sm px-3 py-2 rounded"
-              >
-                🎨 更换背景
-              </button>
-              <button
-                onClick={() => setIsAutomationModalOpen(true)}
-                className="btn-secondary text-sm px-3 py-2 rounded"
-              >
-                ⚙️ 自动化规则
-              </button>
-              <button
-                onClick={openAddModal}
-                className="btn-primary text-sm px-4 py-2 rounded"
-              >
-                + 添加任务
-              </button>
-              <button
-                onClick={() => setIsTrashModalOpen(true)}
-                className="btn-secondary text-sm px-3 py-2 rounded"
-                aria-label="回收站"
-              >
-                🗑️
-              </button>
+              <Button variant="secondary" size="sm" onClick={() => setIsBgModalOpen(true)}>🎨 更换背景</Button>
+              <Button variant="secondary" size="sm" onClick={() => setIsAutomationModalOpen(true)}>⚙️ 自动化规则</Button>
+              <Button size="sm" onClick={openAddModal}>+ 添加任务</Button>
+              <Button variant="secondary" size="sm" onClick={() => setIsTrashModalOpen(true)} aria-label="回收站">🗑️</Button>
             </div>
           </div>
         </div>

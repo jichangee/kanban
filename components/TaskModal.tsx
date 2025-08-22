@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { Dialog, DialogHeader, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Task, Priority } from '@/types/kanban';
 
 interface TaskModalProps {
@@ -84,32 +88,29 @@ export default function TaskModal({
   };
 
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-      <div className="modal-content w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        {/* 模态框头部 */}
-        <div className="flex items-center justify-between p-6 border-b border-[#dfe1e6]">
-          <h2 className="text-xl font-semibold text-[#172b4d]">
-            {mode === 'add' ? '添加新任务' : '编辑任务'}
-          </h2>
-          <button
-            onClick={onCancel}
-            className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100"
-          >
-            ×
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+    <Dialog open={true} onOpenChange={(o) => !o && onCancel()}>
+      <DialogHeader>
+        <h2 className="text-xl font-semibold text-[#172b4d]">
+          {mode === 'add' ? '添加新任务' : '编辑任务'}
+        </h2>
+        <button
+          onClick={onCancel}
+          className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100"
+        >
+          ×
+        </button>
+      </DialogHeader>
+
+      <form onSubmit={handleSubmit}>
+        <DialogContent className="space-y-6">
           {/* 任务内容 */}
           <div>
             <label className="block text-sm font-medium text-[#172b4d] mb-2">
               任务内容 *
             </label>
-            <input
-              type="text"
+            <Input
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="input-field w-full"
               placeholder="输入任务内容..."
               required
             />
@@ -120,10 +121,9 @@ export default function TaskModal({
             <label className="block text-sm font-medium text-[#172b4d] mb-2">
               任务描述
             </label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="input-field w-full resize-none"
               rows={4}
               placeholder="添加任务描述..."
             />
@@ -134,12 +134,11 @@ export default function TaskModal({
             <label className="block text-sm font-medium text-[#172b4d] mb-2">
               相关链接
             </label>
-            <input
+            <Input
               type="url"
               value={newLink}
               onChange={(e) => setNewLink(e.target.value)}
               onKeyDown={handleAddLink}
-              className="input-field w-full"
               placeholder="输入链接后按回车添加"
             />
             {links.length > 0 && (
@@ -172,7 +171,7 @@ export default function TaskModal({
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as Priority)}
-                className="input-field w-full"
+                className="w-full bg-white border border-[#dfe1e6] rounded-md px-3 py-2 text-sm text-[#172b4d] focus-visible:outline-none focus:border-[#0079bf]"
               >
                 <option value="low">低优先级</option>
                 <option value="medium">中优先级</option>
@@ -184,11 +183,10 @@ export default function TaskModal({
               <label className="block text-sm font-medium text-[#172b4d] mb-2">
                 截止日期
               </label>
-              <input
+              <Input
                 type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="input-field w-full"
               />
             </div>
           </div>
@@ -215,34 +213,20 @@ export default function TaskModal({
                 </span>
               ))}
             </div>
-            <input
+            <Input
               type="text"
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
               onKeyDown={handleAddTag}
-              className="input-field w-full"
               placeholder="输入标签后按回车添加"
             />
           </div>
-
-          {/* 操作按钮 */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-[#dfe1e6]">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="btn-secondary"
-            >
-              取消
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-            >
-              {mode === 'add' ? '创建任务' : '保存更改'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </DialogContent>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onCancel}>取消</Button>
+          <Button type="submit">{mode === 'add' ? '创建任务' : '保存更改'}</Button>
+        </DialogFooter>
+      </form>
+    </Dialog>
   );
 }
