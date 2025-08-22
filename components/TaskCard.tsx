@@ -51,7 +51,7 @@ export default function TaskCard({
   return (
     <Card className={`task-card cursor-move group ${getPriorityColor(task.priority)} transition-all duration-200 ease-in-out card-hover`}>
       {/* 任务内容 */}
-      <CardContent className="pb-3">
+      <CardContent className="pb-3 pt-3">
         <p className="text-[#172b4d] text-sm font-medium leading-relaxed">
           {task.content}
         </p>

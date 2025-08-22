@@ -129,6 +129,8 @@ export default function KanbanBoard() {
       try {
         const reg = new RegExp(rule.regex);
         const match = newTask.content.match(reg);
+        console.log('match', match);
+        
         if (match) {
           // 替换模板中的$1、$2等
           let link = rule.linkTemplate;
@@ -136,6 +138,7 @@ export default function KanbanBoard() {
             link = link.replace(new RegExp('\\$' + idx,'g'), m);
           });
           // 添加到links数组而不是覆盖
+          console.log('link', link);
           newTask.links.push(link);
         }
       } catch (e) { /* 忽略无效正则 */ }
