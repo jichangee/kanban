@@ -1,26 +1,20 @@
 export type Priority = 'low' | 'medium' | 'high';
 
 export interface Task {
-  id: number;
+  id: string; // Changed from number
   content: string;
-  description: string;
+  description?: string;
   priority: Priority;
-  tags: string[];
-  dueDate: string | null;
+  tags?: string[];
+  dueDate?: string | null;
   order: number;
-  links: string[];
+  links?: string[];
+  columnId: string; // Added columnId for easier reference
 }
 
 export interface Column {
-  id: number;
+  id: string; // Changed from number
   title: string;
   tasks: Task[];
   hide?: boolean;
-}
-
-export interface DraggedTask {
-  columnId: number;
-  taskId: number;
-  taskContent: string;
-  sourceIndex: number;
 } 

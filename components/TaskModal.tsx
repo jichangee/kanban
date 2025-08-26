@@ -46,14 +46,15 @@ export default function TaskModal({
     e.preventDefault();
     
     const taskData: Task = {
-      id: task?.id || Date.now(),
+      id: task?.id || Date.now().toString(), // Generate a temporary string ID
       content,
       description,
       priority,
       tags,
       dueDate: dueDate || null,
       links,
-      order: task?.order || 0
+      order: task?.order || 0,
+      columnId: task?.columnId || '' // Add dummy columnId to satisfy type
     };
     
     onSave(taskData);

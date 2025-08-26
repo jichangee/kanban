@@ -1,11 +1,17 @@
-"use client";
-
-import { useState, useEffect } from 'react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import KanbanBoard from '@/components/KanbanBoard';
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect('/auth/signin');
+  }
+
   return (
-    <div className="min-h-screen bg-[#0079bf]">
+    <div className="w-full h-full bg-[#0079bf] rounded-md">
       <KanbanBoard />
     </div>
   );
