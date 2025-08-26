@@ -6,12 +6,12 @@ import { db } from '@/lib/db';
 // PUT (Update) a specific automation rule
 export async function PUT(
   req: Request,
-  { params }: { params: { ruleId: string } }
+  { params }: { params: Promise<{ ruleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
-    const { ruleId } = params;
+    const { ruleId } = await params;
 
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
@@ -43,12 +43,12 @@ export async function PUT(
 // DELETE a specific automation rule
 export async function DELETE(
   req: Request,
-  { params }: { params: { ruleId: string } }
+  { params }: { params: Promise<{ ruleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
-    const { ruleId } = params;
+    const { ruleId } = await params;
 
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });

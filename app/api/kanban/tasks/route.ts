@@ -33,11 +33,15 @@ export async function POST(req: Request) {
       try {
         const regex = new RegExp(rule.regex);
         const match = taskData.content.match(regex);
+        console.log('match', match);
+        
         if (match) {
           let link = rule.linkTemplate;
           match.forEach((m: string, idx: number) => {
-            link = link.replace(new RegExp(`\\${idx}`, 'g'), m);
+            link = link.replace(new RegExp('\\$' + idx, 'g'), m);
           });
+          console.log('link', link);
+          
           generatedLinks.push(link);
         }
       } catch (e) {
@@ -45,6 +49,10 @@ export async function POST(req: Request) {
       }
     }
     // --- End Automation Rules ---
+
+    // 合并用户传入的 links 与自动生成的 links，并去重
+    const userSubmittedLinks: string[] = Array.isArray(taskData.links) ? taskData.links : [];
+    const mergedLinks: string[] = Array.from(new Set([...userSubmittedLinks, ...generatedLinks]));
 
     const orderResult = await db.query(
       'SELECT COUNT(*) FROM "tasks" WHERE "columnId" = $1 AND "userId" = $2',
@@ -61,7 +69,7 @@ export async function POST(req: Request) {
       priority: taskData.priority || 'medium',
       dueDate: taskData.dueDate || null,
       tags: taskData.tags || [],
-      links: taskData.links || [],
+      links: mergedLinks,
       order,
       userId,
       columnId,

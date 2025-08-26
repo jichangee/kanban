@@ -6,12 +6,12 @@ import { Task } from '@/types/kanban';
 
 export async function PUT(
   req: Request,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
-    const { taskId } = params;
+    const { taskId } = await params;
 
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
@@ -56,7 +56,7 @@ export async function PUT(
         );
         const existingLinks = existingTaskResult.rows[0]?.links || [];
         const userSubmittedLinks = body.links || [];
-        const allLinks = [...new Set([...existingLinks, ...userSubmittedLinks, ...generatedLinks])];
+        const allLinks = Array.from(new Set([...existingLinks, ...userSubmittedLinks, ...generatedLinks]));
         body.links = allLinks;
       }
     }
@@ -106,12 +106,12 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
-    const { taskId } = params;
+    const { taskId } = await params;
 
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
