@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, DropResult } from '@hello-pangea/dnd';
+import { DragDropContext, DropResult, Draggable, Droppable } from '@hello-pangea/dnd';
 import { Column, Task, Priority } from '@/types/kanban';
 import ColumnComponent from '@/components/Column';
 import TaskModal from '@/components/TaskModal';
@@ -37,6 +37,24 @@ export default function KanbanBoard() {
   const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
   const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
+
+  // 新增/编辑面板（列）
+  const addColumn = () => {
+    const title = prompt('请输入新面板名称');
+    if (!title) return;
+    const nextId = Math.max(...columns.map(c => c.id)) + 1;
+    const newColumn: Column = { id: nextId, title, tasks: [] };
+    const updated = [...columns];
+    // 在回收站前插入新面板
+    const trashIndex = updated.findIndex(c => c.hide);
+    const insertIndex = trashIndex === -1 ? updated.length : trashIndex;
+    updated.splice(insertIndex, 0, newColumn);
+    setColumns(updated);
+  };
+
+  const editColumnTitle = (columnId: number, title: string) => {
+    setColumns(cols => cols.map(c => (c.id === columnId ? { ...c, title } : c)));
+  };
 
   // 背景设置相关状态
   const presetColors = [
@@ -251,13 +269,26 @@ export default function KanbanBoard() {
     setIsModalOpen(true);
   };
   
+  // 拖拽结束：支持列与任务两种类型
   const onDragEnd = (result: DropResult) => {
-    const { source, destination } = result;
+    const { source, destination, type } = result as any;
 
     if (!destination) {
       return;
     }
 
+    if (type === 'COLUMN') {
+      // 列（面板）重新排序
+      const updated = Array.from(columns.filter(c => !c.hide));
+      const trash = columns.find(c => c.hide);
+      const [removed] = updated.splice(source.index, 1);
+      updated.splice(destination.index, 0, removed);
+      const merged = trash ? [...updated, trash] : updated;
+      setColumns(merged);
+      return;
+    }
+
+    // 任务拖拽
     const sourceColumnId = parseInt(source.droppableId);
     const destColumnId = parseInt(destination.droppableId);
 
@@ -341,6 +372,7 @@ export default function KanbanBoard() {
               <Button variant="secondary" size="sm" onClick={() => setIsAutomationModalOpen(true)}>⚙️ 自动化规则</Button>
               <Button size="sm" onClick={openAddModal}>+ 添加任务</Button>
               <Button variant="secondary" size="sm" onClick={() => setIsTrashModalOpen(true)} aria-label="回收站">🗑️</Button>
+              <Button variant="secondary" size="sm" onClick={addColumn}>+ 新增面板</Button>
             </div>
           </div>
         </div>
@@ -455,20 +487,36 @@ export default function KanbanBoard() {
           </div>
         </div>
       )}
-      {/* 看板内容区域 */}
+      {/* 看板内容区域：列级拖拽 */}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex-1 p-4">
-          <div className="flex space-x-4 overflow-x-auto pb-4">
-            {columns.filter(item => !item.hide).map(column => (
-              <ColumnComponent
-                key={column.id}
-                column={column}
-                onDeleteTask={deleteTask}
-                onEditTask={openEditModal}
-              />
-            ))}
-          </div>
-        </div>
+        <Droppable droppableId="board" direction="horizontal" type="COLUMN">
+          {(provided) => (
+            <div ref={provided.innerRef} {...provided.droppableProps} className="flex-1 p-4">
+              <div className="flex space-x-4 overflow-x-auto pb-4">
+                {columns.map((column, index) => (
+                  column.hide ? (
+                    <div key={column.id} className="hidden" />
+                  ) : (
+                    <Draggable draggableId={`col-${column.id}`} index={index} key={column.id}>
+                      {(provided) => (
+                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                          <ColumnComponent
+                            column={column}
+                            onDeleteTask={deleteTask}
+                            onEditTask={openEditModal}
+                            onRestoreTask={restoreTask}
+                            onEditColumnTitle={editColumnTitle}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  )
+                ))}
+                {provided.placeholder}
+              </div>
+            </div>
+          )}
+        </Droppable>
       </DragDropContext>
       
       {/* 任务模态框 */}
