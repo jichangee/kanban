@@ -13,6 +13,8 @@ const pool = new Pool({
 export const authOptions: AuthOptions = {
   // Use the Postgres adapter to connect to our Neon database.
   adapter: PostgresAdapter(pool),
+  // Add secret for production
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     // Configure Google OAuth provider.
     GoogleProvider({
