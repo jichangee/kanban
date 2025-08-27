@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { createId } from '@paralleldrive/cuid2';
 import useSWR from 'swr';
 import { BoardData } from '@/app/api/kanban/board/route';
+import { signOut } from 'next-auth/react';
 
 // 自动化规则类型
 type AutomationRule = {
@@ -35,8 +36,8 @@ export default function KanbanBoard() {
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [editingTask, setEditingTask] = useState<{task: Task, columnId: string} | null>(null);
   
-  // 自动化规则状态
-  const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
+  // 设置面板与自动化规则状态
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
 
   // 背景设置相关状态
@@ -46,7 +47,7 @@ export default function KanbanBoard() {
   const [backgroundType, setBackgroundType] = useState<'color' | 'image'>('color');
   const [backgroundColor, setBackgroundColor] = useState<string>(presetColors[0]);
   const [backgroundImage, setBackgroundImage] = useState<string>(''); // 网络图片或 base64
-  const [isBgModalOpen, setIsBgModalOpen] = useState(false);
+  // 合并到设置面板，不再单独打开背景模态框
 
   // useEffect for saving to localStorage has been removed as we now fetch from the database.
 
@@ -475,120 +476,121 @@ export default function KanbanBoard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="secondary" size="sm" onClick={() => setIsBgModalOpen(true)}>🎨 更换背景</Button>
-              <Button variant="secondary" size="sm" onClick={() => setIsAutomationModalOpen(true)}>⚙️ 自动化规则</Button>
+              <Button variant="secondary" size="sm" onClick={() => setIsSettingsOpen(true)}>⚙️ 设置</Button>
               <Button size="sm" onClick={openAddModal}>+ 添加任务</Button>
               <Button variant="secondary" size="sm" onClick={() => setIsTrashModalOpen(true)} aria-label="回收站">🗑️</Button>
             </div>
           </div>
         </div>
       </div>
-      {/* 自动化规则模态框 */}
-      {isAutomationModalOpen && (
+      {/* 设置面板（合并 自动化规则 + 更换背景 + 退出登录） */}
+      {isSettingsOpen && (
         <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-          <div className="modal-content w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="modal-content w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-[#dfe1e6]">
-              <h2 className="text-xl font-semibold text-[#172b4d]">自动化规则</h2>
-              <button onClick={() => setIsAutomationModalOpen(false)} className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100">×</button>
+              <h2 className="text-xl font-semibold text-[#172b4d]">设置</h2>
+              <button onClick={() => setIsSettingsOpen(false)} className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100">×</button>
             </div>
-            <div className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-[#172b4d] mb-2">规则名称</label>
-                <input name="name" value={ruleForm.name} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：数字转链接" />
-                <label className="block text-sm font-medium text-[#172b4d] mb-2">正则表达式</label>
-                <input name="regex" value={ruleForm.regex} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：(\d+)" />
-                <label className="block text-sm font-medium text-[#172b4d] mb-2">链接模板（用$1、$2等占位）</label>
-                <input name="linkTemplate" value={ruleForm.linkTemplate} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：https://example.com/item/$1" />
-                {editingRule ? (
-                  <div className="flex items-center gap-2 mt-2">
-                    <button type="button" className="btn-primary" onClick={handleUpdateRule}>保存修改</button>
-                    <button type="button" className="btn-secondary" onClick={handleCancelEditRule}>取消</button>
-                  </div>
-                ) : (
-                  <button type="button" className="btn-primary mt-2" onClick={handleAddRule}>添加规则</button>
-                )}
-              </div>
-              <div>
-                <h3 className="font-medium text-[#172b4d] mb-2">已添加规则</h3>
-                <ul className="space-y-2">
-                  {(automationRules || []).map(rule => (
-                    <li key={rule.id} className="flex items-center justify-between bg-white border border-[#dfe1e6] rounded-lg px-4 py-3 shadow-sm">
-                      <div className="flex-1">
-                        <div className="font-medium text-sm text-[#172b4d] mb-1">{rule.name}</div>
-                        <div className="text-xs text-[#5e6c84] mb-1">正则: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.regex}</code></div>
-                        <div className="text-xs text-[#5e6c84]">模板: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.linkTemplate}</code></div>
-                      </div>
-                      <div className="flex items-center gap-2 ml-3">
-                        <button className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50" onClick={() => handleStartEditRule(rule)}>编辑</button>
-                        <button className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50" onClick={() => handleDeleteRule(rule.id)}>删除</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* 更换背景模态框 */}
-      {isBgModalOpen && (
-        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-          <div className="modal-content w-full max-w-md max-h-[90vh] overflow-y-auto text-[#172b4d]">
-            <div className="flex items-center justify-between p-6 border-b border-[#dfe1e6]">
-              <h2 className="text-xl font-semibold">更换背景</h2>
-              <button onClick={() => setIsBgModalOpen(false)} className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100">×</button>
-            </div>
-            <div className="p-6 space-y-6">
-              <div className="mb-4">
-                <label className="mr-4 font-medium">
-                  <input
-                    type="radio"
-                    name="bgType"
-                    checked={backgroundType === 'color'}
-                    onChange={() => setBackgroundType('color')}
-                  />
-                  <span className="ml-1">背景色</span>
-                </label>
-                <label className="font-medium">
-                  <input
-                    type="radio"
-                    name="bgType"
-                    checked={backgroundType === 'image'}
-                    onChange={() => setBackgroundType('image')}
-                  />
-                  <span className="ml-1">背景图片</span>
-                </label>
-              </div>
-              {backgroundType === 'color' && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {presetColors.map(color => (
-                    <button
-                      key={color}
-                      className="w-8 h-8 rounded border-2"
-                      style={{ background: color, borderColor: backgroundColor === color ? '#333' : '#fff' }}
-                      onClick={() => setBackgroundColor(color)}
-                    />
-                  ))}
-                </div>
-              )}
-              {backgroundType === 'image' && (
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    className="input-field w-full"
-                    placeholder="输入图片链接..."
-                    value={backgroundImage.startsWith('data:') ? '' : backgroundImage}
-                    onChange={e => setBackgroundImage(e.target.value)}
-                  />
-                  <div className="flex items-center gap-2">
-                    <input type="file" accept="image/*" onChange={handleBgFileChange} />
-                    <span className="text-xs text-[#5e6c84]">或上传本地图片</span>
-                  </div>
-                  {backgroundImage && (
-                    <img src={backgroundImage} alt="预览" className="w-full h-32 object-cover rounded mt-2" />
+            <div className="p-6 space-y-10">
+              {/* 自动化规则 */}
+              <section>
+                <h3 className="text-lg font-semibold text-[#172b4d] mb-4">自动化规则</h3>
+                <div>
+                  <label className="block text-sm font-medium text-[#172b4d] mb-2">规则名称</label>
+                  <input name="name" value={ruleForm.name} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：数字转链接" />
+                  <label className="block text-sm font-medium text-[#172b4d] mb-2">正则表达式</label>
+                  <input name="regex" value={ruleForm.regex} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：(\\d+)" />
+                  <label className="block text-sm font-medium text-[#172b4d] mb-2">链接模板（用$1、$2等占位）</label>
+                  <input name="linkTemplate" value={ruleForm.linkTemplate} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：https://example.com/item/$1" />
+                  {editingRule ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <button type="button" className="btn-primary" onClick={handleUpdateRule}>保存修改</button>
+                      <button type="button" className="btn-secondary" onClick={handleCancelEditRule}>取消</button>
+                    </div>
+                  ) : (
+                    <button type="button" className="btn-primary mt-2" onClick={handleAddRule}>添加规则</button>
                   )}
                 </div>
-              )}
+                <div className="mt-4">
+                  <h4 className="font-medium text-[#172b4d] mb-2">已添加规则</h4>
+                  <ul className="space-y-2">
+                    {(automationRules || []).map(rule => (
+                      <li key={rule.id} className="flex items-center justify-between bg-white border border-[#dfe1e6] rounded-lg px-4 py-3 shadow-sm">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm text-[#172b4d] mb-1">{rule.name}</div>
+                          <div className="text-xs text-[#5e6c84] mb-1">正则: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.regex}</code></div>
+                          <div className="text-xs text-[#5e6c84]">模板: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.linkTemplate}</code></div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-3">
+                          <button className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50" onClick={() => handleStartEditRule(rule)}>编辑</button>
+                          <button className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50" onClick={() => handleDeleteRule(rule.id)}>删除</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+
+              {/* 更换背景 */}
+              <section>
+                <h3 className="text-lg font-semibold text-[#172b4d] mb-4">更换背景</h3>
+                <div className="mb-4">
+                  <label className="mr-4 font-medium">
+                    <input
+                      type="radio"
+                      name="bgType"
+                      checked={backgroundType === 'color'}
+                      onChange={() => setBackgroundType('color')}
+                    />
+                    <span className="ml-1 text-black">背景色</span>
+                  </label>
+                  <label className="font-medium">
+                    <input
+                      type="radio"
+                      name="bgType"
+                      checked={backgroundType === 'image'}
+                      onChange={() => setBackgroundType('image')}
+                    />
+                    <span className="ml-1 text-black">背景图片</span>
+                  </label>
+                </div>
+                {backgroundType === 'color' && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {presetColors.map(color => (
+                      <button
+                        key={color}
+                        className="w-8 h-8 rounded border-2"
+                        style={{ background: color, borderColor: backgroundColor === color ? '#333' : '#fff' }}
+                        onClick={() => setBackgroundColor(color)}
+                      />
+                    ))}
+                  </div>
+                )}
+                {backgroundType === 'image' && (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      className="input-field w-full"
+                      placeholder="输入图片链接..."
+                      value={backgroundImage.startsWith('data:') ? '' : backgroundImage}
+                      onChange={e => setBackgroundImage(e.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <input type="file" accept="image/*" onChange={handleBgFileChange} />
+                      <span className="text-xs text-[#5e6c84]">或上传本地图片</span>
+                    </div>
+                    {backgroundImage && (
+                      <img src={backgroundImage} alt="预览" className="w-full h-32 object-cover rounded mt-2" />
+                    )}
+                  </div>
+                )}
+              </section>
+
+              {/* 退出登录 */}
+              <section>
+                <h3 className="text-lg font-semibold text-[#172b4d] mb-2">账号</h3>
+                <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded" onClick={() => signOut({ callbackUrl: '/auth/signin' })}>退出登录</button>
+              </section>
             </div>
           </div>
         </div>
