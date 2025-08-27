@@ -33,7 +33,7 @@ export default function KanbanBoard() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isTrashModalOpen, setIsTrashModalOpen] = useState<boolean>(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [editingTask, setEditingTask] = useState<{task: Task, columnId: number} | null>(null);
+  const [editingTask, setEditingTask] = useState<{task: Task, columnId: string} | null>(null);
   
   // 自动化规则状态
   const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);

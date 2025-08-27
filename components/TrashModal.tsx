@@ -8,8 +8,8 @@ import TaskCard from './TaskCard';
 
 interface TrashModalProps {
   tasks: Task[];
-  onRestore: (taskId: number) => void;
-  onDelete: (columnId: number, taskId: number) => void;
+  onRestore: (taskId: string) => void;
+  onDelete: (columnId: string, taskId: string) => void;
   onClose: () => void;
 }
 
@@ -61,7 +61,7 @@ export default function TrashModal({
               <TaskCard
                 key={task.id}
                 task={task}
-                columnId={4}
+                columnId={task.columnId}
                 onDelete={onDelete}
                 onEdit={(columnId, task) => {}}
                 onRestore={onRestore}

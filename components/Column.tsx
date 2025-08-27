@@ -9,9 +9,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ColumnProps {
   column: Column;
-  onDeleteTask: (columnId: number, taskId: number) => void;
-  onEditTask: (columnId: number, task: Task) => void;
-  onRestoreTask?: (taskId: number) => void;
+  onDeleteTask: (columnId: string, taskId: string) => void;
+  onEditTask: (columnId: string, task: Task) => void;
+  onRestoreTask?: (taskId: string) => void;
 }
 
 export default function ColumnComponent({

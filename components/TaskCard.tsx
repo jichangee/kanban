@@ -7,10 +7,10 @@ import { Badge } from '@/components/ui/badge';
 
 interface TaskCardProps {
   task: Task;
-  columnId: number;
-  onDelete: (columnId: number, taskId: number) => void;
-  onEdit: (columnId: number, task: Task) => void;
-  onRestore?: (taskId: number) => void;
+  columnId: string;
+  onDelete: (columnId: string, taskId: string) => void;
+  onEdit: (columnId: string, task: Task) => void;
+  onRestore?: (taskId: string) => void;
 }
 
 export default function TaskCard({
@@ -95,7 +95,7 @@ export default function TaskCard({
       )}
       
       {/* 标签区域 */}
-      {task.tags.length > 0 && (
+      {task.tags && task.tags.length > 0 && (
         <CardContent className="flex flex-wrap gap-1 -mt-2 mb-2">
           {task.tags.map((tag, index) => (
             <Badge key={index} className="text-[10px]">{tag}</Badge>
