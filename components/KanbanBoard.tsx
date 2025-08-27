@@ -5,7 +5,7 @@ import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Column, Task, Priority } from '@/types/kanban';
 import ColumnComponent from '@/components/Column';
 import TaskModal from '@/components/TaskModal';
-import TrashModal from '@/components/TrashModal';
+import TaskCard from '@/components/TaskCard';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { createId } from '@paralleldrive/cuid2';
@@ -32,7 +32,7 @@ export default function KanbanBoard() {
   
   // 模态框状态
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isTrashModalOpen, setIsTrashModalOpen] = useState<boolean>(false);
+  // 废纸篓已整合进设置面板，不再使用独立模态
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [editingTask, setEditingTask] = useState<{task: Task, columnId: string} | null>(null);
   
@@ -49,6 +49,19 @@ export default function KanbanBoard() {
   const [backgroundImage, setBackgroundImage] = useState<string>(''); // 网络图片或 base64
   // 合并到设置面板，不再单独打开背景模态框
 
+  // 面板编辑：隐藏列与重命名
+  const [hiddenColumnIds, setHiddenColumnIds] = useState<string[]>([]);
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [editingColumnTitle, setEditingColumnTitle] = useState<string>('');
+  const [newColumnTitle, setNewColumnTitle] = useState<string>('');
+
+  // 可折叠分区
+  const [openAutomation, setOpenAutomation] = useState(true);
+  const [openBackground, setOpenBackground] = useState(true);
+  const [openEditPanel, setOpenEditPanel] = useState(true);
+  const [openTrash, setOpenTrash] = useState(true);
+  const [openAccount, setOpenAccount] = useState(true);
+
   // useEffect for saving to localStorage has been removed as we now fetch from the database.
 
   // useEffects for loading and saving automation rules from localStorage have been removed.
@@ -58,12 +71,19 @@ export default function KanbanBoard() {
     const bgType = localStorage.getItem('kanbanBgType');
     const bgColor = localStorage.getItem('kanbanBgColor');
     const bgImg = localStorage.getItem('kanbanBgImg');
+    const hidden = localStorage.getItem('kanbanHiddenColumns');
     if (bgType === 'image' && bgImg) {
       setBackgroundType('image');
       setBackgroundImage(bgImg);
     } else if (bgColor) {
       setBackgroundType('color');
       setBackgroundColor(bgColor);
+    }
+    if (hidden) {
+      try {
+        const parsed = JSON.parse(hidden);
+        if (Array.isArray(parsed)) setHiddenColumnIds(parsed);
+      } catch {}
     }
   }, []);
   // 持久化背景设置
@@ -75,6 +95,11 @@ export default function KanbanBoard() {
       localStorage.setItem('kanbanBgImg', backgroundImage);
     }
   }, [backgroundType, backgroundColor, backgroundImage]);
+
+  // 持久化隐藏列设置
+  useEffect(() => {
+    localStorage.setItem('kanbanHiddenColumns', JSON.stringify(hiddenColumnIds));
+  }, [hiddenColumnIds]);
 
   // 处理本地图片上传
   const handleBgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,7 +247,7 @@ export default function KanbanBoard() {
     destColFromNew.tasks.push(movedTask);
 
     mutateBoard(newBoardData, false);
-    setIsTrashModalOpen(false); // Close the modal after restoring
+    // 整合进设置面板，无需单独关闭回收站模态
 
     // --- 2. Prepare API Payload ---
     const tasksToUpdate: { id: string; order: number; columnId: string }[] = [];
@@ -246,6 +271,112 @@ export default function KanbanBoard() {
     } catch (error) {
         console.error("Failed to restore task:", error);
         mutateBoard(boardData, false); // Revert on failure
+    }
+  };
+
+  // 切换列隐藏
+  const toggleColumnHidden = (columnId: string, hide: boolean) => {
+    setHiddenColumnIds(prev => {
+      const next = hide ? Array.from(new Set([...prev, columnId])) : prev.filter(id => id !== columnId);
+      return next;
+    });
+  };
+
+  // 开始重命名列
+  const startRenameColumn = (columnId: string, currentTitle: string) => {
+    setEditingColumnId(columnId);
+    setEditingColumnTitle(currentTitle);
+  };
+
+  // 取消重命名
+  const cancelRenameColumn = () => {
+    setEditingColumnId(null);
+    setEditingColumnTitle('');
+  };
+
+  // 提交重命名
+  const submitRenameColumn = async () => {
+    if (!editingColumnId || !boardData) return;
+    const newTitle = editingColumnTitle.trim();
+    if (!newTitle) return;
+
+    const original = boardData;
+    const updated = boardData.map(col => col.id === editingColumnId ? { ...col, title: newTitle } : col);
+    mutateBoard(updated, false);
+    const idToUpdate = editingColumnId;
+    cancelRenameColumn();
+    try {
+      const res = await fetch(`/api/kanban/columns/${idToUpdate}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle }),
+      });
+      if (!res.ok) throw new Error('Failed to rename column');
+      mutateBoard();
+    } catch (e) {
+      console.error('Rename column failed', e);
+      mutateBoard(original, false);
+    }
+  };
+  
+  // 新增列
+  const handleCreateColumn = async () => {
+    if (!boardData) return;
+    const title = newColumnTitle.trim();
+    if (!title) return;
+
+    const original = boardData;
+    const trash = boardData.find(c => c.title === '回收站');
+    const insertIndex = trash ? original.indexOf(trash) : original.length;
+    const tempId = createId();
+    const optimistic = [
+      ...original.slice(0, insertIndex),
+      { id: tempId, title, tasks: [], hide: false },
+      ...original.slice(insertIndex)
+    ];
+    mutateBoard(optimistic, false);
+    setNewColumnTitle('');
+    try {
+      const res = await fetch('/api/kanban/columns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      if (!res.ok) throw new Error('Create column failed');
+      mutateBoard();
+    } catch (e) {
+      console.error(e);
+      mutateBoard(original, false);
+    }
+  };
+
+  // 删除列（后端会把列内任务移动到回收站）
+  const handleDeleteColumn = async (columnId: string) => {
+    if (!boardData) return;
+    const column = boardData.find(c => c.id === columnId);
+    if (!column || column.title === '回收站') return;
+
+    const original = boardData;
+    const trash = boardData.find(c => c.title === '回收站');
+    if (trash) {
+      const newBoard = JSON.parse(JSON.stringify(boardData)) as typeof boardData;
+      const trashIdx = newBoard.findIndex(c => c.id === trash.id);
+      const colIdx = newBoard.findIndex(c => c.id === columnId);
+      const movedTasks = newBoard[colIdx].tasks;
+      newBoard[trashIdx].tasks = [...newBoard[trashIdx].tasks, ...movedTasks];
+      newBoard.splice(colIdx, 1);
+      mutateBoard(newBoard, false);
+    } else {
+      mutateBoard(boardData.filter(c => c.id !== columnId), false);
+    }
+
+    try {
+      const res = await fetch(`/api/kanban/columns/${columnId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete column failed');
+      mutateBoard();
+    } catch (e) {
+      console.error(e);
+      mutateBoard(original, false);
     }
   };
   
@@ -478,7 +609,6 @@ export default function KanbanBoard() {
             <div className="flex items-center space-x-3">
               <Button variant="secondary" size="sm" onClick={() => setIsSettingsOpen(true)}>⚙️ 设置</Button>
               <Button size="sm" onClick={openAddModal}>+ 添加任务</Button>
-              <Button variant="secondary" size="sm" onClick={() => setIsTrashModalOpen(true)} aria-label="回收站">🗑️</Button>
             </div>
           </div>
         </div>
@@ -494,7 +624,9 @@ export default function KanbanBoard() {
             <div className="p-6 space-y-10">
               {/* 自动化规则 */}
               <section>
-                <h3 className="text-lg font-semibold text-[#172b4d] mb-4">自动化规则</h3>
+                <h3 className="text-lg font-semibold text-[#172b4d] mb-4 cursor-pointer" onClick={() => setOpenAutomation(v => !v)}>自动化规则 {openAutomation ? '▾' : '▸'}</h3>
+                {openAutomation && (
+                <>
                 <div>
                   <label className="block text-sm font-medium text-[#172b4d] mb-2">规则名称</label>
                   <input name="name" value={ruleForm.name} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：数字转链接" />
@@ -529,11 +661,14 @@ export default function KanbanBoard() {
                     ))}
                   </ul>
                 </div>
+                </>
+                )}
               </section>
 
               {/* 更换背景 */}
               <section>
-                <h3 className="text-lg font-semibold text-[#172b4d] mb-4">更换背景</h3>
+                <h3 className="text-lg font-semibold text-[#172b4d] mb-4 cursor-pointer" onClick={() => setOpenBackground(v => !v)}>更换背景 {openBackground ? '▾' : '▸'}</h3>
+                {openBackground && (
                 <div className="mb-4">
                   <label className="mr-4 font-medium">
                     <input
@@ -554,7 +689,8 @@ export default function KanbanBoard() {
                     <span className="ml-1 text-black">背景图片</span>
                   </label>
                 </div>
-                {backgroundType === 'color' && (
+                )}
+                {backgroundType === 'color' && openBackground && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {presetColors.map(color => (
                       <button
@@ -566,7 +702,7 @@ export default function KanbanBoard() {
                     ))}
                   </div>
                 )}
-                {backgroundType === 'image' && (
+                {backgroundType === 'image' && openBackground && (
                   <div className="space-y-2">
                     <input
                       type="text"
@@ -586,10 +722,97 @@ export default function KanbanBoard() {
                 )}
               </section>
 
+              {/* 编辑面板：重命名与隐藏 */}
+              <section>
+                <h3 className="text-lg font-semibold text-[#172b4d] mb-4 cursor-pointer" onClick={() => setOpenEditPanel(v => !v)}>编辑面板 {openEditPanel ? '▾' : '▸'}</h3>
+                {openEditPanel && (
+                <>
+                <div className="flex items-center gap-2 mb-3">
+                  <input className="input-field flex-1" placeholder="新建列名称" value={newColumnTitle} onChange={(e) => setNewColumnTitle(e.target.value)} />
+                  <button className="btn-primary" onClick={handleCreateColumn}>新增列</button>
+                </div>
+                <div className="space-y-2">
+                  {boardData.filter(c => c.title !== '回收站').map(col => {
+                    const isHidden = hiddenColumnIds.includes(col.id);
+                    const isEditing = editingColumnId === col.id;
+                    return (
+                      <div key={col.id} className="flex items-center justify-between bg-white border border-[#dfe1e6] rounded-lg px-4 py-3 shadow-sm">
+                        <div className="flex items-center gap-3 flex-1">
+                          {isEditing ? (
+                            <input
+                              className="input-field w-56"
+                              value={editingColumnTitle}
+                              onChange={(e) => setEditingColumnTitle(e.target.value)}
+                              placeholder="列名称"
+                            />
+                          ) : (
+                            <span className="text-sm text-[#172b4d] font-medium">{col.title}</span>
+                          )}
+                          <label className="text-sm text-[#172b4d] flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isHidden}
+                              onChange={(e) => toggleColumnHidden(col.id, e.target.checked)}
+                            />
+                            隐藏
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isEditing ? (
+                            <>
+                              <button className="btn-primary" onClick={submitRenameColumn}>保存</button>
+                              <button className="btn-secondary" onClick={cancelRenameColumn}>取消</button>
+                            </>
+                          ) : (
+                            <>
+                              <button className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50" onClick={() => startRenameColumn(col.id, col.title)}>重命名</button>
+                              <button className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50" onClick={() => handleDeleteColumn(col.id)}>删除</button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                </>
+                )}
+              </section>
+
+              {/* 回收站（整合） */}
+              <section>
+                <h3 className="text-lg font-semibold text-[#172b4d] mb-2 cursor-pointer" onClick={() => setOpenTrash(v => !v)}>回收站 {openTrash ? '▾' : '▸'}</h3>
+                {openTrash && (() => {
+                  const trash = boardData.find(col => col.title === '回收站');
+                  const tasks = trash?.tasks || [];
+                  return tasks.length === 0 ? (
+                    <div className="text-center py-6 bg-white border border-[#dfe1e6] rounded-lg">
+                      <div className="text-4xl mb-2">🗑️</div>
+                      <p className="text-sm text-[#5e6c84]">回收站是空的</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[40vh] overflow-y-auto bg-white border border-[#dfe1e6] rounded-lg p-4">
+                      {tasks.map(task => (
+                        <div key={task.id}>
+                          <TaskCard
+                            task={task}
+                            columnId={task.columnId}
+                            onDelete={deleteTask}
+                            onEdit={(_columnId: string, _task) => {}}
+                            onRestore={restoreTask}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </section>
+
               {/* 退出登录 */}
               <section>
-                <h3 className="text-lg font-semibold text-[#172b4d] mb-2">账号</h3>
-                <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded" onClick={() => signOut({ callbackUrl: '/auth/signin' })}>退出登录</button>
+                <h3 className="text-lg font-semibold text-[#172b4d] mb-2 cursor-pointer" onClick={() => setOpenAccount(v => !v)}>账号 {openAccount ? '▾' : '▸'}</h3>
+                {openAccount && (
+                  <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded" onClick={() => signOut({ callbackUrl: '/auth/signin' })}>退出登录</button>
+                )}
               </section>
             </div>
           </div>
@@ -599,7 +822,10 @@ export default function KanbanBoard() {
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="flex-1 p-4">
           <div className="flex space-x-4 overflow-x-auto pb-4">
-            {boardData.filter(item => !item.hide).map(column => (
+            {boardData
+              .filter(item => item.title !== '回收站')
+              .filter(item => !hiddenColumnIds.includes(item.id))
+              .map(column => (
               <ColumnComponent
                 key={column.id}
                 column={column}
@@ -624,15 +850,6 @@ export default function KanbanBoard() {
         />
       )}
 
-      {/* 回收站模态框 */}
-      {isTrashModalOpen && (
-        <TrashModal
-          tasks={boardData.find(col => col.title === '回收站')?.tasks || []}
-          onRestore={restoreTask}
-          onDelete={deleteTask}
-          onClose={() => setIsTrashModalOpen(false)}
-        />
-      )}
     </div>
   );
 }
