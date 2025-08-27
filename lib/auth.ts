@@ -4,6 +4,20 @@ import EmailProvider from "next-auth/providers/email";
 import PostgresAdapter from "@auth/pg-adapter";
 import { Pool } from "pg";
 
+// Debug: Check if required environment variables are set
+if (!process.env.GOOGLE_CLIENT_ID) {
+  console.error('Missing GOOGLE_CLIENT_ID environment variable');
+}
+if (!process.env.GOOGLE_CLIENT_SECRET) {
+  console.error('Missing GOOGLE_CLIENT_SECRET environment variable');
+}
+if (!process.env.NEXTAUTH_SECRET) {
+  console.error('Missing NEXTAUTH_SECRET environment variable');
+}
+if (!process.env.NEXTAUTH_URL) {
+  console.error('Missing NEXTAUTH_URL environment variable');
+}
+
 // Create a new database connection pool.
 // We are careful to only instantiate one pool and reuse it across the app.
 const pool = new Pool({
