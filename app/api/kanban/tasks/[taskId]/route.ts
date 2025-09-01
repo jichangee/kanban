@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { Task } from '@/types/kanban';
+import { executeAutomationRules, mergeAndDeduplicateLinks } from '@/lib/automation';
 
 export async function PUT(
   req: Request,
@@ -25,39 +26,20 @@ export async function PUT(
 
     // If content is being updated, re-run automation rules
     if (body.content) {
-      const automationRulesResult = await db.query(
-        'SELECT * FROM "automation_rules" WHERE "userId" = $1',
-        [userId]
+      // 获取现有任务的链接，避免重复添加
+      const existingTaskResult = await db.query(
+        'SELECT links FROM "tasks" WHERE id = $1 AND "userId" = $2',
+        [taskId, userId]
       );
-      const automationRules = automationRulesResult.rows;
-      const generatedLinks: string[] = [];
-
-      for (const rule of automationRules) {
-        try {
-          const regex = new RegExp(rule.regex);
-          const match = body.content.match(regex);
-          if (match) {
-            let link = rule.linkTemplate;
-            match.forEach((m: string, idx: number) => {
-              link = link.replace(new RegExp(`\\${idx}`, 'g'), m);
-            });
-            generatedLinks.push(link);
-          }
-        } catch (e) {
-          console.error(`Invalid regex for rule ${rule.id}:`, e);
-        }
-      }
-
-      // Merge with existing links if necessary
+      const existingLinks = existingTaskResult.rows[0]?.links || [];
+      
+      // 使用新的自动化规则执行函数
+      const generatedLinks = await executeAutomationRules(body.content, userId, existingLinks);
+      
+      // 合并链接并去重
       if (generatedLinks.length > 0) {
-        const existingTaskResult = await db.query(
-          'SELECT links FROM "tasks" WHERE id = $1 AND "userId" = $2',
-          [taskId, userId]
-        );
-        const existingLinks = existingTaskResult.rows[0]?.links || [];
         const userSubmittedLinks = body.links || [];
-        const allLinks = Array.from(new Set([...existingLinks, ...userSubmittedLinks, ...generatedLinks]));
-        body.links = allLinks;
+        body.links = mergeAndDeduplicateLinks(existingLinks, userSubmittedLinks, generatedLinks);
       }
     }
     

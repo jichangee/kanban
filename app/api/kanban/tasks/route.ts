@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { createId } from '@paralleldrive/cuid2';
 import { Task } from '@/types/kanban';
+import { executeAutomationRules, mergeAndDeduplicateLinks } from '@/lib/automation';
 
 export async function POST(req: Request) {
   try {
@@ -22,37 +23,12 @@ export async function POST(req: Request) {
     }
 
     // --- Apply Automation Rules ---
-    const automationRulesResult = await db.query(
-      'SELECT * FROM "automation_rules" WHERE "userId" = $1',
-      [userId]
-    );
-    const automationRules = automationRulesResult.rows;
-    const generatedLinks: string[] = [];
-
-    for (const rule of automationRules) {
-      try {
-        const regex = new RegExp(rule.regex);
-        const match = taskData.content.match(regex);
-        console.log('match', match);
-        
-        if (match) {
-          let link = rule.linkTemplate;
-          match.forEach((m: string, idx: number) => {
-            link = link.replace(new RegExp('\\$' + idx, 'g'), m);
-          });
-          console.log('link', link);
-          
-          generatedLinks.push(link);
-        }
-      } catch (e) {
-        console.error(`Invalid regex for rule ${rule.id}:`, e);
-      }
-    }
-    // --- End Automation Rules ---
-
-    // 合并用户传入的 links 与自动生成的 links，并去重
     const userSubmittedLinks: string[] = Array.isArray(taskData.links) ? taskData.links : [];
-    const mergedLinks: string[] = Array.from(new Set([...userSubmittedLinks, ...generatedLinks]));
+    const generatedLinks = await executeAutomationRules(taskData.content, userId, userSubmittedLinks);
+    
+    // 合并并去重链接
+    const mergedLinks = mergeAndDeduplicateLinks([], userSubmittedLinks, generatedLinks);
+    // --- End Automation Rules ---
 
     const orderResult = await db.query(
       'SELECT COUNT(*) FROM "tasks" WHERE "columnId" = $1 AND "userId" = $2',
