@@ -49,8 +49,11 @@ function markRuleAsExecuted(userId: string, content: string, ruleId: string): vo
   
   // 清理旧的缓存条目（防止内存泄漏）
   if (executionCache.size > 1000) {
-    const firstKey = executionCache.keys().next().value;
-    executionCache.delete(firstKey);
+    const iteratorResult = executionCache.keys().next();
+    const firstKey = iteratorResult.value;
+    if (firstKey !== undefined) {
+      executionCache.delete(firstKey);
+    }
   }
 }
 
@@ -133,11 +136,11 @@ export function mergeAndDeduplicateLinks(
  */
 export function clearUserExecutionCache(userId: string): void {
   const keysToDelete: string[] = [];
-  for (const key of executionCache.keys()) {
+  executionCache.forEach((_value, key) => {
     if (key.startsWith(`${userId}:`)) {
       keysToDelete.push(key);
     }
-  }
+  });
   keysToDelete.forEach(key => executionCache.delete(key));
 }
 
