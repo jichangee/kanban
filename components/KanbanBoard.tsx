@@ -576,15 +576,63 @@ export default function KanbanBoard() {
   };
 
   if (boardIsLoading) {
-    return <div className="text-white text-center p-10">看板加载中...</div>;
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="w-12 h-12 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-white/90 text-lg font-semibold">正在加载看板...</h2>
+            <p className="text-white/60 text-sm">请稍候，我们正在为您准备最佳体验</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (boardError) {
-    return <div className="text-red-500 bg-white p-10 rounded-md">错误：看板数据加载失败，请重试。</div>;
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-md mx-4 border border-white/20 text-center">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-white/90 text-lg font-semibold mb-2">加载失败</h2>
+          <p className="text-white/70 text-sm mb-4">看板数据加载失败，请检查网络连接后重试</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium"
+          >
+            重新加载
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!boardData) {
-    return <div className="text-white text-center p-10">未找到看板数据。</div>;
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-md mx-4 border border-white/20 text-center">
+          <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 className="text-white/90 text-lg font-semibold mb-2">暂无数据</h2>
+          <p className="text-white/70 text-sm mb-4">当前没有找到看板数据，请创建新的看板或检查权限设置</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium"
+          >
+            刷新页面
+          </button>
+        </div>
+      </div>
+    );
   }
   
   return (
