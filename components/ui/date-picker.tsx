@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { format } from "date-fns"
+import { zhCN } from "date-fns/locale"
 import { Calendar as CalendarIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -33,7 +34,14 @@ export function DatePicker({
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate)
     if (onChange) {
-      onChange(selectedDate ? selectedDate.toISOString() : "")
+      // 使用UTC时间存储，但保留当前时区信息
+      if (selectedDate) {
+        // 创建UTC日期，但保持本地时区的显示
+        const utcDate = new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000)
+        onChange(utcDate.toISOString())
+      } else {
+        onChange("")
+      }
     }
   }
 
@@ -49,7 +57,7 @@ export function DatePicker({
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
+          {date ? format(date, "PPP", { locale: zhCN }) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -58,6 +66,7 @@ export function DatePicker({
           selected={date}
           onSelect={handleDateSelect}
           initialFocus
+          locale={zhCN}
         />
       </PopoverContent>
     </Popover>

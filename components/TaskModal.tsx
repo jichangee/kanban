@@ -92,30 +92,30 @@ export default function TaskModal({
 
   return (
     <Dialog open={true} onOpenChange={(o) => !o && onCancel()}>
-      <DialogHeader className="border-b border-gray-200 pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-              <span className="text-white text-lg">📝</span>
+      <DialogContent className="space-y-2">
+        <DialogHeader className="border-b border-gray-200 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span className="text-white text-lg">📝</span>
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold text-gray-900">
+                  {mode === 'add' ? '添加新任务' : '编辑任务'}
+                </DialogTitle>
+                <p className="text-gray-500 text-sm">完善任务信息</p>
+              </div>
             </div>
-            <div>
-              <DialogTitle className="text-xl font-semibold text-gray-900">
-                {mode === 'add' ? '添加新任务' : '编辑任务'}
-              </DialogTitle>
-              <p className="text-gray-500 text-sm">完善任务信息</p>
-            </div>
+            <button
+              onClick={onCancel}
+              className="text-gray-400 hover:text-gray-600 text-2xl p-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
+            >
+              ×
+            </button>
           </div>
-          <button
-            onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 text-2xl p-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
-          >
-            ×
-          </button>
-        </div>
-      </DialogHeader>
+        </DialogHeader>
 
-      <form onSubmit={handleSubmit}>
-        <DialogContent className="space-y-2 pt-6">
+        <form id="task-form" onSubmit={handleSubmit} className="space-y-4">
           {/* 任务内容 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -235,7 +235,8 @@ export default function TaskModal({
               placeholder="输入标签后按回车添加"
             />
           </div>
-        </DialogContent>
+        </form>
+        
         <DialogFooter className="border-t border-gray-200 pt-4">
           <Button 
             type="button" 
@@ -246,11 +247,12 @@ export default function TaskModal({
           </Button>
           <Button 
             type="submit"
+            form="task-form"
           >
             {mode === 'add' ? '创建任务' : '保存更改'}
           </Button>
         </DialogFooter>
-      </form>
+      </DialogContent>
     </Dialog>
   );
 }
