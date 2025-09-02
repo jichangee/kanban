@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { Dialog, DialogHeader, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogHeader, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Task } from '@/types/kanban';
 import TaskCard from './TaskCard';
@@ -41,7 +41,7 @@ export default function TrashModal({
             <span className="text-red-600 text-lg">🗑️</span>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-[#172b4d]">回收站</h2>
+            <DialogTitle className="text-xl font-semibold text-[#172b4d]">回收站</DialogTitle>
             <p className="text-sm text-[#5e6c84]">{tasks.length} 个已删除的任务</p>
           </div>
         </div>

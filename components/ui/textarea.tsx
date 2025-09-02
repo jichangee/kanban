@@ -1,32 +1,18 @@
-"use client";
+import * as React from "react"
 
-import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils"
 
-function cn(...classes: Array<string | undefined | null | false>) {
-  return twMerge(classes.filter(Boolean).join(" "));
+function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+  return (
+    <textarea
+      data-slot="textarea"
+      className={cn(
+        "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
-
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <textarea
-        className={cn(
-          "flex min-h-[80px] w-full rounded-md border border-[#dfe1e6] bg-white px-3 py-2 text-sm text-[#172b4d] placeholder:text-[#5e6c84] focus-visible:outline-none focus:border-[#0079bf]",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-Textarea.displayName = "Textarea";
-
-export { Textarea };
-
-
-
+export { Textarea }

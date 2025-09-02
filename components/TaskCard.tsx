@@ -20,15 +20,15 @@ export default function TaskCard({
   onEdit,
   onRestore
 }: TaskCardProps) {
-  // 根据优先级获取颜色
-  const getPriorityColor = (priority: string) => {
+  // 根据优先级获取样式类
+  const getPriorityClass = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'border-l-4 border-l-red-500';
+        return 'priority-high';
       case 'medium':
-        return 'border-l-4 border-l-yellow-500';
+        return 'priority-medium';
       case 'low':
-        return 'border-l-4 border-l-green-500';
+        return 'priority-low';
       default:
         return '';
     }
@@ -49,14 +49,16 @@ export default function TaskCard({
   };
 
   return (
-    <Card className={`task-card cursor-move group ${getPriorityColor(task.priority)} transition-all duration-200 ease-in-out card-hover`}>
+    <Card className={`task-card cursor-move group ${getPriorityClass(task.priority)} mb-2`}>
       {/* 任务内容 */}
-      <CardContent className="pb-3 pt-3">
-        <p className="text-[#172b4d] text-sm font-medium leading-relaxed">
+      <CardContent className="pb-3 pt-4">
+        <p className="text-gray-900 text-sm font-medium leading-relaxed">
           {task.content}
         </p>
+        
+        {/* 链接区域 */}
         {task.links && task.links.length > 0 && (
-          <div className="mt-2 space-y-2">
+          <div className="mt-3 space-y-2">
             {task.links.map((link, index) => {
               // 提取域名作为显示名称
               let displayName = `链接 ${index + 1}`;
@@ -64,7 +66,6 @@ export default function TaskCard({
                 const url = new URL(link);
                 displayName = url.hostname;
               } catch (e) {
-                // 如果URL解析失败，使用原始链接的前20个字符
                 displayName = link.length > 20 ? link.substring(0, 20) + '...' : link;
               }
               
@@ -74,11 +75,11 @@ export default function TaskCard({
                   href={link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex mr-2 items-center text-[#0079bf] hover:text-[#005a8b] text-xs bg-[#f4f5f7] px-2 py-1 rounded hover:bg-[#e4f0f6] transition-colors"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-700 text-xs bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-all duration-200 border border-blue-200"
                   onClick={(e) => e.stopPropagation()}
                   title={link}
                 >
-                  <span className="mr-1">🔗</span>
+                  <span className="mr-1 text-blue-500">🔗</span>
                   {displayName}
                 </a>
               );
@@ -89,55 +90,64 @@ export default function TaskCard({
 
       {/* 任务描述 */}
       {task.description && (
-        <CardContent className="text-xs text-[#5e6c84] -mt-2 mb-1 line-clamp-2 leading-relaxed">
+        <CardContent className="text-xs text-gray-600 -mt-2 mb-2 line-clamp-2 leading-relaxed px-4">
           {task.description}
         </CardContent>
       )}
       
       {/* 标签区域 */}
       {task.tags && task.tags.length > 0 && (
-        <CardContent className="flex flex-wrap gap-1 -mt-2 mb-2">
+        <CardContent className="flex flex-wrap gap-2 -mt-2 mb-3 px-4">
           {task.tags.map((tag, index) => (
-            <Badge key={index} className="text-[10px]">{tag}</Badge>
+            <span key={index} className="modern-badge">
+              {tag}
+            </span>
           ))}
         </CardContent>
       )}
       
       {/* 底部信息栏 */}
-      <CardFooter className="flex items-center justify-between pt-0">
-        <div className="flex items-center space-x-2">
+      <CardFooter className="flex items-center justify-between pt-0 px-4 pb-3">
+        <div className="flex items-center space-x-3">
           {/* 优先级标签 */}
-          <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'warning' : 'success'}>
+          <div className={`px-2 py-1 rounded text-xs font-medium ${
+            task.priority === 'high' 
+              ? 'bg-red-50 text-red-700 border border-red-200' 
+              : task.priority === 'medium' 
+              ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' 
+              : 'bg-green-50 text-green-700 border border-green-200'
+          }`}>
             {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-          </Badge>
+          </div>
           
           {/* 到期时间 */}
           {task.dueDate && (
-            <span className={`text-xs px-2 py-1 rounded ${
+            <div className={`px-2 py-1 rounded text-xs font-medium ${
               isOverdue 
-                ? 'bg-red-100 text-red-700' 
-                : 'bg-gray-100 text-gray-600'
+                ? 'bg-red-50 text-red-700 border border-red-200' 
+                : 'bg-gray-50 text-gray-600 border border-gray-200'
             }`}>
+              <span className="mr-1">📅</span>
               {formatDateTime(task.dueDate)}
               {isOverdue && <span className="ml-1">⚠️</span>}
-            </span>
+            </div>
           )}
         </div>
         
         {/* 操作按钮 */}
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
           {onRestore ? (
             <>
               <button
                 onClick={() => onRestore(task.id)}
-                className="text-green-600 hover:text-green-800 text-sm p-1 rounded hover:bg-green-50"
+                className="text-green-600 hover:text-green-700 text-sm p-1 rounded hover:bg-green-50 transition-all duration-200"
                 aria-label="恢复任务"
               >
                 🔄
               </button>
               <button
                 onClick={() => onDelete(columnId, task.id)}
-                className="text-red-600 hover:text-red-800 text-sm p-1 rounded hover:bg-red-50"
+                className="text-red-600 hover:text-red-700 text-sm p-1 rounded hover:bg-red-50 transition-all duration-200"
                 aria-label="永久删除"
               >
                 🗑️
@@ -147,14 +157,14 @@ export default function TaskCard({
             <>
               <button
                 onClick={() => onEdit(columnId, task)}
-                className="text-[#0079bf] hover:text-[#005a8b] text-sm p-1 rounded hover:bg-blue-50"
+                className="text-blue-600 hover:text-blue-700 text-sm p-1 rounded hover:bg-blue-50 transition-all duration-200"
                 aria-label="编辑任务"
               >
                 ✏️
               </button>
               <button
                 onClick={() => onDelete(columnId, task.id)}
-                className="text-red-600 hover:text-red-800 text-sm p-1 rounded hover:bg-red-50"
+                className="text-red-600 hover:text-red-700 text-sm p-1 rounded hover:bg-red-50 transition-all duration-200"
                 aria-label="删除任务"
               >
                 ❌
