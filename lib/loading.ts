@@ -30,7 +30,9 @@ class LoadingManager {
 
   subscribe(listener: (states: Map<string, boolean>) => void) {
     this.listeners.add(listener)
-    return () => this.listeners.delete(listener)
+    return () => {
+      this.listeners.delete(listener)
+    }
   }
 
   private notifyListeners() {
@@ -47,7 +49,7 @@ export function useLoading(key: string) {
     const unsubscribe = manager.subscribe((states) => {
       setLoading(states.get(key) || false)
     })
-    return unsubscribe
+    return () => unsubscribe()
   }, [key, manager])
 
   const setLoadingState = (isLoading: boolean) => {
@@ -66,7 +68,7 @@ export function useGlobalLoading() {
     const unsubscribe = manager.subscribe((states) => {
       setIsAnyLoading(Array.from(states.values()).some(loading => loading))
     })
-    return unsubscribe
+    return () => unsubscribe()
   }, [manager])
 
   return isAnyLoading
