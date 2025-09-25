@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, DropResult } from '@hello-pangea/dnd';
+import { DragDropContext, DropResult, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Column, Task, Priority } from '@/types/kanban';
 import ColumnComponent from '@/components/Column';
 import TaskModal from '@/components/TaskModal';
@@ -491,6 +491,56 @@ export default function KanbanBoard() {
     }
   };
 
+  const onColumnDragEnd = async (result: DropResult) => {
+    const { source, destination } = result;
+    if (!destination || !boardData) return;
+  
+    if (source.index === destination.index) return;
+
+    const normalColumns = boardData.filter(c => c.title !== '回收站');
+    const trashColumn = boardData.find(c => c.title === '回收站');
+
+    const [movedColumn] = normalColumns.splice(source.index, 1);
+    normalColumns.splice(destination.index, 0, movedColumn);
+
+    const newBoardData = [...normalColumns];
+    if (trashColumn) {
+      newBoardData.push(trashColumn);
+    }
+  
+    // Optimistically update the UI
+    mutateBoard(newBoardData, false);
+  
+    // Prepare the data for the API call
+    const columnsToUpdate = newBoardData.map((col, index) => ({
+      id: col.id,
+      order: index,
+    }));
+  
+    // API Call to persist the new order
+    try {
+      const response = await fetch('/api/kanban/reorder/column', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(columnsToUpdate),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Server error:', errorData);
+        throw new Error('Failed to reorder columns on the server');
+      }
+  
+      // Revalidate to get the final state from the server
+      mutateBoard();
+    } catch (error) {
+      console.error("Failed to reorder columns:", error);
+      // Revert the optimistic update on failure
+      mutateBoard(boardData, false);
+    }
+  };
+
+
   // 自动化规则表单相关
   const [ruleForm, setRuleForm] = useState({ name: '', regex: '', linkTemplate: '' });
   const handleRuleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -731,49 +781,67 @@ export default function KanbanBoard() {
                   <input className="input-field flex-1" placeholder="新建列名称" value={newColumnTitle} onChange={(e) => setNewColumnTitle(e.target.value)} />
                   <button className="btn-primary" onClick={handleCreateColumn}>新增列</button>
                 </div>
-                <div className="space-y-2">
-                  {boardData.filter(c => c.title !== '回收站').map(col => {
-                    const isHidden = hiddenColumnIds.includes(col.id);
-                    const isEditing = editingColumnId === col.id;
-                    return (
-                      <div key={col.id} className="flex items-center justify-between bg-white border border-[#dfe1e6] rounded-lg px-4 py-3 shadow-sm">
-                        <div className="flex items-center gap-3 flex-1">
-                          {isEditing ? (
-                            <input
-                              className="input-field w-56"
-                              value={editingColumnTitle}
-                              onChange={(e) => setEditingColumnTitle(e.target.value)}
-                              placeholder="列名称"
-                            />
-                          ) : (
-                            <span className="text-sm text-[#172b4d] font-medium">{col.title}</span>
-                          )}
-                          <label className="text-sm text-[#172b4d] flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={isHidden}
-                              onChange={(e) => toggleColumnHidden(col.id, e.target.checked)}
-                            />
-                            隐藏
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {isEditing ? (
-                            <>
-                              <button className="btn-primary" onClick={submitRenameColumn}>保存</button>
-                              <button className="btn-secondary" onClick={cancelRenameColumn}>取消</button>
-                            </>
-                          ) : (
-                            <>
-                              <button className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50" onClick={() => startRenameColumn(col.id, col.title)}>重命名</button>
-                              <button className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50" onClick={() => handleDeleteColumn(col.id)}>删除</button>
-                            </>
-                          )}
-                        </div>
+                <DragDropContext onDragEnd={onColumnDragEnd}>
+                  <Droppable droppableId="columns-editor">
+                    {(provided) => (
+                      <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                        {boardData.filter(c => c.title !== '回收站').map((col, index) => {
+                          const isHidden = hiddenColumnIds.includes(col.id);
+                          const isEditing = editingColumnId === col.id;
+                          return (
+                            <Draggable key={col.id} draggableId={col.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`flex items-center justify-between bg-white border rounded-lg px-4 py-3 shadow-sm ${snapshot.isDragging ? 'border-blue-500' : 'border-[#dfe1e6]'}`}
+                                >
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <div {...provided.dragHandleProps} className="cursor-grab text-gray-400 hover:text-gray-600">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                                    </div>
+                                    {isEditing ? (
+                                      <input
+                                        className="input-field w-56"
+                                        value={editingColumnTitle}
+                                        onChange={(e) => setEditingColumnTitle(e.target.value)}
+                                        placeholder="列名称"
+                                      />
+                                    ) : (
+                                      <span className="text-sm text-[#172b4d] font-medium">{col.title}</span>
+                                    )}
+                                    <label className="text-sm text-[#172b4d] flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={isHidden}
+                                        onChange={(e) => toggleColumnHidden(col.id, e.target.checked)}
+                                      />
+                                      隐藏
+                                    </label>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {isEditing ? (
+                                      <>
+                                        <button className="btn-primary" onClick={submitRenameColumn}>保存</button>
+                                        <button className="btn-secondary" onClick={cancelRenameColumn}>取消</button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50" onClick={() => startRenameColumn(col.id, col.title)}>重命名</button>
+                                        <button className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50" onClick={() => handleDeleteColumn(col.id)}>删除</button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
                       </div>
-                    );
-                  })}
-                </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
                 </>
                 )}
               </section>

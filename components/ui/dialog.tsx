@@ -31,7 +31,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 
 export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("flex items-center justify-between p-6 border-b border-[#dfe1e6]", className)} {...props} />
+    <div className={cn("flex items-center p-6 border-b border-[#dfe1e6]", className)} {...props} />
   );
 }
 

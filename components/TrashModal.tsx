@@ -35,7 +35,7 @@ export default function TrashModal({
 
   return (
     <Dialog open={true} onOpenChange={(o) => !o && onClose()}>
-      <DialogHeader>
+      <DialogHeader className="relative">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
             <span className="text-red-600 text-lg">🗑️</span>
@@ -45,7 +45,7 @@ export default function TrashModal({
             <p className="text-sm text-[#5e6c84]">{tasks.length} 个已删除的任务</p>
           </div>
         </div>
-        <button onClick={onClose} className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100">×</button>
+        <button onClick={onClose} className="absolute right-6 top-1/2 transform -translate-y-1/2 text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100">×</button>
       </DialogHeader>
 
       <DialogContent>

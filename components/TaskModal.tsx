@@ -90,13 +90,13 @@ export default function TaskModal({
 
   return (
     <Dialog open={true} onOpenChange={(o) => !o && onCancel()}>
-      <DialogHeader>
+      <DialogHeader className="relative">
         <h2 className="text-xl font-semibold text-[#172b4d]">
           {mode === 'add' ? '添加新任务' : '编辑任务'}
         </h2>
         <button
           onClick={onCancel}
-          className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100"
+          className="absolute right-6 top-1/2 transform -translate-y-1/2 text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100"
         >
           ×
         </button>
