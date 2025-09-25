@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { createId } from '@paralleldrive/cuid2';
+import { clearUserExecutionCache } from '@/lib/automation';
 
 // GET all automation rules for the current user
 export async function GET(req: Request) {
@@ -55,6 +56,9 @@ export async function POST(req: Request) {
       'INSERT INTO "automation_rules" (id, name, regex, "linkTemplate", "userId") VALUES ($1, $2, $3, $4, $5)',
       [newRule.id, newRule.name, newRule.regex, newRule.linkTemplate, newRule.userId]
     );
+
+    // 清理用户的执行缓存，确保新规则能正常执行
+    clearUserExecutionCache(userId);
 
     return NextResponse.json(newRule, { status: 201 });
   } catch (error) {

@@ -626,15 +626,63 @@ export default function KanbanBoard() {
   };
 
   if (boardIsLoading) {
-    return <div className="text-white text-center p-10">看板加载中...</div>;
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="w-12 h-12 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-white/90 text-lg font-semibold">正在加载看板...</h2>
+            <p className="text-white/60 text-sm">请稍候，我们正在为您准备最佳体验</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (boardError) {
-    return <div className="text-red-500 bg-white p-10 rounded-md">错误：看板数据加载失败，请重试。</div>;
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-md mx-4 border border-white/20 text-center">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-white/90 text-lg font-semibold mb-2">加载失败</h2>
+          <p className="text-white/70 text-sm mb-4">看板数据加载失败，请检查网络连接后重试</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium"
+          >
+            重新加载
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!boardData) {
-    return <div className="text-white text-center p-10">未找到看板数据。</div>;
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-md mx-4 border border-white/20 text-center">
+          <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 className="text-white/90 text-lg font-semibold mb-2">暂无数据</h2>
+          <p className="text-white/70 text-sm mb-4">当前没有找到看板数据，请创建新的看板或检查权限设置</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium"
+          >
+            刷新页面
+          </button>
+        </div>
+      </div>
+    );
   }
   
   return (
@@ -647,18 +695,35 @@ export default function KanbanBoard() {
       }
     >
       {/* 顶部导航栏 */}
-      <div className="nav-glass shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3">
+      <div className="nav-glass">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Image src="/logo.svg" alt="标识" width={40} height={40} />
-                <h1 className="text-white font-semibold text-xl">看板</h1>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                  <Image src="/logo.svg" alt="标识" width={20} height={20} className="filter brightness-0 invert" />
+                </div>
+                <h1 className="text-gray-900 font-semibold text-lg">看板</h1>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="secondary" size="sm" onClick={() => setIsSettingsOpen(true)}>⚙️ 设置</Button>
-              <Button size="sm" onClick={openAddModal}>+ 添加任务</Button>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={() => setIsSettingsOpen(true)}
+                className="flex items-center space-x-2"
+              >
+                <span>⚙️</span>
+                <span>设置</span>
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={openAddModal}
+                className="flex items-center space-x-2"
+              >
+                <span>+</span>
+                <span>添加任务</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -666,53 +731,75 @@ export default function KanbanBoard() {
       {/* 设置面板（合并 自动化规则 + 更换背景 + 退出登录） */}
       {isSettingsOpen && (
         <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-          <div className="modal-content w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-[#dfe1e6]">
-              <h2 className="text-xl font-semibold text-[#172b4d]">设置</h2>
-              <button onClick={() => setIsSettingsOpen(false)} className="text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100">×</button>
-            </div>
-            <div className="p-6 space-y-10">
-              {/* 自动化规则 */}
-              <section>
-                <h3 className="text-lg font-semibold text-[#172b4d] mb-4 cursor-pointer" onClick={() => setOpenAutomation(v => !v)}>自动化规则 {openAutomation ? '▾' : '▸'}</h3>
-                {openAutomation && (
-                <>
+          <div className="modal-content w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                  <span className="text-white text-lg">⚙️</span>
+                </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#172b4d] mb-2">规则名称</label>
-                  <input name="name" value={ruleForm.name} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：数字转链接" />
-                  <label className="block text-sm font-medium text-[#172b4d] mb-2">正则表达式</label>
-                  <input name="regex" value={ruleForm.regex} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：(\\d+)" />
-                  <label className="block text-sm font-medium text-[#172b4d] mb-2">链接模板（用$1、$2等占位）</label>
-                  <input name="linkTemplate" value={ruleForm.linkTemplate} onChange={handleRuleFormChange} className="input-field w-full mb-2" placeholder="如：https://example.com/item/$1" />
-                  {editingRule ? (
-                    <div className="flex items-center gap-2 mt-2">
-                      <button type="button" className="btn-primary" onClick={handleUpdateRule}>保存修改</button>
-                      <button type="button" className="btn-secondary" onClick={handleCancelEditRule}>取消</button>
+                  <h2 className="text-gray-900 text-xl font-semibold">设置</h2>
+                  <p className="text-gray-500 text-sm">个性化你的看板体验</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsSettingsOpen(false)} 
+                className="text-gray-400 hover:text-gray-600 text-2xl p-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6 space-y-8">
+              {/* 自动化规则 */}
+              <section className="settings-section">
+                <h3 
+                  className="collapsible-header text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2" 
+                  onClick={() => setOpenAutomation(v => !v)}
+                >
+                  <span className="text-blue-500">🔧</span>
+                  <span>自动化规则</span>
+                  <span className="text-gray-400 text-sm ml-auto">{openAutomation ? '▾' : '▸'}</span>
+                </h3>
+                <div className={`collapsible-content ${openAutomation ? 'max-h-none' : 'max-h-0'}`}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">规则名称</label>
+                      <input name="name" value={ruleForm.name} onChange={handleRuleFormChange} className="input-field w-full mb-3" placeholder="如：数字转链接" />
+                      <label className="block text-sm font-medium text-gray-700 mb-2">正则表达式</label>
+                      <input name="regex" value={ruleForm.regex} onChange={handleRuleFormChange} className="input-field w-full mb-3" placeholder="如：(\\d+)" />
+                      <label className="block text-sm font-medium text-gray-700 mb-2">链接模板（用$1、$2等占位）</label>
+                      <input name="linkTemplate" value={ruleForm.linkTemplate} onChange={handleRuleFormChange} className="input-field w-full mb-3" placeholder="如：https://example.com/item/$1" />
+                      {editingRule ? (
+                        <div className="flex items-center gap-3 mt-3">
+                          <button type="button" className="btn-primary" onClick={handleUpdateRule}>保存修改</button>
+                          <button type="button" className="btn-secondary" onClick={handleCancelEditRule}>取消</button>
+                        </div>
+                      ) : (
+                        <button type="button" className="btn-primary mt-3" onClick={handleAddRule}>添加规则</button>
+                      )}
                     </div>
-                  ) : (
-                    <button type="button" className="btn-primary mt-2" onClick={handleAddRule}>添加规则</button>
-                  )}
+                    <div className="mt-6">
+                      <h4 className="font-medium text-gray-900 mb-3">已添加规则</h4>
+                      <div className="max-h-60 overflow-y-auto">
+                        <ul className="space-y-3">
+                          {(automationRules || []).map(rule => (
+                            <li key={rule.id} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm text-gray-900 mb-1">{rule.name}</div>
+                                <div className="text-xs text-gray-600 mb-1">正则: <code className="bg-gray-100 px-2 py-1 rounded text-blue-600">{rule.regex}</code></div>
+                                <div className="text-xs text-gray-600">模板: <code className="bg-gray-100 px-2 py-1 rounded text-green-600">{rule.linkTemplate}</code></div>
+                              </div>
+                              <div className="flex items-center gap-2 ml-3">
+                                <button className="text-blue-600 hover:text-blue-700 text-sm px-3 py-1 rounded hover:bg-blue-50 transition-all duration-200" onClick={() => handleStartEditRule(rule)}>编辑</button>
+                                <button className="text-red-600 hover:text-red-700 text-sm px-3 py-1 rounded hover:bg-red-50 transition-all duration-200" onClick={() => handleDeleteRule(rule.id)}>删除</button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-4">
-                  <h4 className="font-medium text-[#172b4d] mb-2">已添加规则</h4>
-                  <ul className="space-y-2">
-                    {(automationRules || []).map(rule => (
-                      <li key={rule.id} className="flex items-center justify-between bg-white border border-[#dfe1e6] rounded-lg px-4 py-3 shadow-sm">
-                        <div className="flex-1">
-                          <div className="font-medium text-sm text-[#172b4d] mb-1">{rule.name}</div>
-                          <div className="text-xs text-[#5e6c84] mb-1">正则: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.regex}</code></div>
-                          <div className="text-xs text-[#5e6c84]">模板: <code className="bg-[#f4f5f7] px-1 py-0.5 rounded">{rule.linkTemplate}</code></div>
-                        </div>
-                        <div className="flex items-center gap-2 ml-3">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50" onClick={() => handleStartEditRule(rule)}>编辑</button>
-                          <button className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50" onClick={() => handleDeleteRule(rule.id)}>删除</button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                </>
-                )}
               </section>
 
               {/* 更换背景 */}
@@ -888,8 +975,8 @@ export default function KanbanBoard() {
       )}
       {/* 看板内容区域 */}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex-1 p-4">
-          <div className="flex space-x-4 overflow-x-auto pb-4">
+        <div className="flex-1 p-6">
+          <div className="flex space-x-6 overflow-x-auto pb-6">
             {boardData
               .filter(item => item.title !== '回收站')
               .filter(item => !hiddenColumnIds.includes(item.id))
