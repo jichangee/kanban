@@ -92,7 +92,7 @@ export default function TaskModal({
 
   return (
     <Dialog open={true} onOpenChange={(o) => !o && onCancel()}>
-      <DialogContent className="space-y-2">
+      <DialogContent className="space-y-2" showCloseButton={false}>
         <DialogHeader className="border-b border-gray-200 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">

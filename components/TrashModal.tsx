@@ -48,7 +48,7 @@ export default function TrashModal({
         <button onClick={onClose} className="absolute right-6 top-1/2 transform -translate-y-1/2 text-[#5e6c84] hover:text-[#172b4d] text-xl p-1 rounded hover:bg-gray-100">×</button>
       </DialogHeader>
 
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         {tasks.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🗑️</div>
