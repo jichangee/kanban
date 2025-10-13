@@ -92,26 +92,18 @@ export default function TaskModal({
 
   return (
     <Dialog open={true} onOpenChange={(o) => !o && onCancel()}>
-      <DialogContent className="space-y-2" showCloseButton={false}>
+      <DialogContent className="space-y-2" showCloseButton={true}>
         <DialogHeader className="border-b border-gray-200 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-                <span className="text-white text-lg">📝</span>
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-semibold text-gray-900">
-                  {mode === 'add' ? '添加新任务' : '编辑任务'}
-                </DialogTitle>
-                <p className="text-gray-500 text-sm">完善任务信息</p>
-              </div>
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+              <span className="text-white text-lg">📝</span>
             </div>
-            <button
-              onClick={onCancel}
-              className="text-gray-400 hover:text-gray-600 text-2xl p-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
-            >
-              ×
-            </button>
+            <div>
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                {mode === 'add' ? '添加新任务' : '编辑任务'}
+              </DialogTitle>
+              <p className="text-gray-500 text-sm">完善任务信息</p>
+            </div>
           </div>
         </DialogHeader>
 

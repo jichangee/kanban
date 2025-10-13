@@ -22,7 +22,7 @@ export default function ColumnComponent({
 }: ColumnProps) {
   return (
     <div className="flex-shrink-0 w-80">
-      <div className="column-container p-4 h-fit max-h-[calc(100vh-140px)] overflow-hidden">
+      <div className="column-container p-4 h-fit max-h-[calc(100vh-140px)]">
         {/* 列标题区域 */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
@@ -40,7 +40,7 @@ export default function ColumnComponent({
         <Droppable droppableId={String(column.id)}>
           {(provided, snapshot) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              <ScrollArea className={`task-list space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50 rounded-lg' : ''}`}>
+              <ScrollArea className={`task-list space-y-3 h-[calc(100vh-220px)] ${snapshot.isDraggingOver ? 'bg-blue-50 rounded-lg' : ''}`}>
                 {column.tasks.map((task, index) => (
                   <Draggable key={task.id} draggableId={String(task.id)} index={index}>
                     {(provided, snapshot) => (
