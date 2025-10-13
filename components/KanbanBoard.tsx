@@ -12,6 +12,9 @@ import { createId } from '@paralleldrive/cuid2';
 import useSWR from 'swr';
 import { BoardData } from '@/app/api/kanban/board/route';
 import { signOut } from 'next-auth/react';
+import AIChat from '@/components/AIChat';
+import { AIAction } from '@/lib/ai-service';
+import { AIActionHandler } from '@/lib/ai-action-handler';
 
 // 自动化规则类型
 type AutomationRule = {
@@ -61,6 +64,9 @@ export default function KanbanBoard() {
   const [openEditPanel, setOpenEditPanel] = useState(true);
   const [openTrash, setOpenTrash] = useState(true);
   const [openAccount, setOpenAccount] = useState(true);
+
+  // AI对话状态
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
 
   // useEffect for saving to localStorage has been removed as we now fetch from the database.
 
@@ -625,6 +631,21 @@ export default function KanbanBoard() {
     setRuleForm({ name: '', regex: '', linkTemplate: '' });
   };
 
+  // AI动作处理函数
+  const handleAIAction = async (action: AIAction): Promise<boolean> => {
+    if (!boardData) {
+      return false;
+    }
+
+    try {
+      const success = await AIActionHandler.executeAction(action, boardData, mutateBoard);
+      return success;
+    } catch (error) {
+      console.error('AI action failed:', error);
+      return false;
+    }
+  };
+
   if (boardIsLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
@@ -707,17 +728,26 @@ export default function KanbanBoard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Button 
-                variant="secondary" 
-                size="sm" 
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsAIChatOpen(true)}
+                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+              >
+                <span>🤖</span>
+                <span>AI助手</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setIsSettingsOpen(true)}
                 className="flex items-center space-x-2"
               >
                 <span>⚙️</span>
                 <span>设置</span>
               </Button>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={openAddModal}
                 className="flex items-center space-x-2"
               >
@@ -1004,6 +1034,14 @@ export default function KanbanBoard() {
           mode={modalMode}
         />
       )}
+
+      {/* AI聊天组件 */}
+      <AIChat
+        boardData={boardData}
+        onActionExecute={handleAIAction}
+        isOpen={isAIChatOpen}
+        onClose={() => setIsAIChatOpen(false)}
+      />
 
     </div>
   );
