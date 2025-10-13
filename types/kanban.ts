@@ -17,4 +17,6 @@ export interface Column {
   title: string;
   tasks: Task[];
   hide?: boolean;
-} 
+}
+
+export type BoardData = Column[]; 

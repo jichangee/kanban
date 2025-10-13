@@ -124,7 +124,7 @@ ${formatBoardData()}
 
     return {
       id: Date.now().toString(),
-      role: 'assistant',
+      role: 'model',
       content: success
         ? `✅ 操作执行成功：${action.description}`
         : `❌ 操作执行失败：${action.description}${action.error ? ` (${action.error})` : ''}`,

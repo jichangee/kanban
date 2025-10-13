@@ -49,7 +49,10 @@ export async function POST(req: Request) {
       const vertexAIInstance = new VertexAI({
         project: PROJECT_ID,
         location: LOCATION,
-        auth: auth,
+        googleAuthOptions: {
+          projectId: PROJECT_ID,
+          scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        },
       });
 
       const generativeModel = vertexAIInstance.getGenerativeModel({
@@ -79,7 +82,7 @@ export async function POST(req: Request) {
       });
 
       const response = result.response;
-      const text = response.text();
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
       return NextResponse.json({ response: text });
     } catch (vertexError) {
