@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import AuthProvider from '@/components/AuthProvider';
 import AuthControls from '@/components/AuthControls';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: '看板应用 | Kanban Board',
@@ -21,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh">
-      <body className={`min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 ${inter.className}`}>
+      <body className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 font-sans">
         <AuthProvider>
           <main className="relative">
             {/* Global loading overlay */}
