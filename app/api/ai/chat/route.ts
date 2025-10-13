@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { GoogleAuth } from 'google-auth-library';
-import { google } from 'googleapis';
 
 // 配置Google AI API
 const PROJECT_ID = process.env.GOOGLE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
@@ -28,19 +26,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 获取认证凭证
-    let auth;
-    try {
-      auth = new GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-        projectId: PROJECT_ID,
-      });
-    } catch (error) {
-      console.error('Google Auth initialization failed:', error);
-      // 尝试使用API密钥方式
-      return await callVertexAIWithAPIKey(messages);
-    }
-
     // 使用Vertex AI API
     try {
       const vertexAI = await import('@google-cloud/vertexai');
@@ -49,10 +34,6 @@ export async function POST(req: Request) {
       const vertexAIInstance = new VertexAI({
         project: PROJECT_ID,
         location: LOCATION,
-        googleAuthOptions: {
-          projectId: PROJECT_ID,
-          scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-        },
       });
 
       const generativeModel = vertexAIInstance.getGenerativeModel({
