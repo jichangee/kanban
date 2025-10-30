@@ -221,11 +221,55 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px;
   transition: all 0.2s ease;
+  max-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
 }
 
 .column-container:hover {
   border-color: #d1d5db;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 列标题固定区域 */
+.column-header {
+  flex-shrink: 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* 任务列表滚动区域 */
+.column-scrollable {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 优化滚动条样式 */
+.column-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.column-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 8px;
+  margin: 4px 0;
+}
+
+.column-scrollable::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 8px;
+  border: 2px solid white;
+  transition: background 0.2s ease;
+}
+
+.column-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* 拖拽时的滚动条高亮 */
+.column-scrollable:hover::-webkit-scrollbar-thumb {
+  background: #b5bac1;
 }
 
 /* 简约任务卡片样式 */
