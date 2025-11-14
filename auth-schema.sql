@@ -36,11 +36,11 @@ CREATE TABLE "sessions" (
   CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action
 );
 
-CREATE TABLE "verification_tokens" (
+CREATE TABLE "verification_token" (
   "identifier" text NOT NULL,
   "token" text NOT NULL,
   "expires" timestamp with time zone NOT NULL,
-  CONSTRAINT "verification_tokens_pkey" PRIMARY KEY ("identifier", "token")
+  CONSTRAINT "verification_token_pkey" PRIMARY KEY ("identifier", "token")
 );
 
 -- Create indexes for performance
