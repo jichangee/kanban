@@ -1,4 +1,5 @@
-import { type AuthOptions, type Adapter } from "next-auth";
+import { type AuthOptions } from "next-auth";
+import type { Adapter, AdapterUser } from "next-auth/adapters";
 import GoogleProvider from "next-auth/providers/google";
 import EmailProvider from "next-auth/providers/email";
 import PostgresAdapter from "@auth/pg-adapter";
@@ -44,7 +45,7 @@ const baseAdapter = PostgresAdapter(db) as Adapter;
 
 const customAdapter: Adapter = {
   ...baseAdapter,
-  async createUser(user) {
+  async createUser(user: Omit<AdapterUser, "id"> & { id?: string }): Promise<AdapterUser> {
     // 生成用户 ID（如果还没有）
     const userId = user.id || randomUUID();
     
