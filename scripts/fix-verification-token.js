@@ -49,6 +49,9 @@ if (!connectionString) {
 
 const pool = new Pool({
   connectionString,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
 async function fixVerificationToken() {

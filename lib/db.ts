@@ -11,6 +11,9 @@ export const db: Pool =
   global.pgPool ||
   new Pool({
     connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false,
+    },
   });
 
 // 开发环境缓存到全局，生产环境让实例由模块作用域持有

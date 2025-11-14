@@ -103,6 +103,93 @@ const customAdapter: Adapter = {
       throw error;
     }
   },
+  async linkAccount(account: any) {
+    // 生成 account ID（确保不为 null）
+    const accountId = randomUUID();
+    
+    console.log('[CustomAdapter] Linking account:', {
+      accountId,
+      userId: account.userId,
+      provider: account.provider,
+    });
+    
+    try {
+      await db.query(
+        `INSERT INTO "accounts" 
+         (id, "userId", type, provider, "providerAccountId", refresh_token, access_token, expires_at, token_type, scope, id_token, session_state)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [
+          accountId,
+          account.userId,
+          account.type,
+          account.provider,
+          account.providerAccountId,
+          account.refresh_token || null,
+          account.access_token || null,
+          account.expires_at || null,
+          account.token_type || null,
+          account.scope || null,
+          account.id_token || null,
+          account.session_state || null,
+        ]
+      );
+
+      console.log('[CustomAdapter] Account linked successfully');
+      
+      return {
+        ...account,
+        id: accountId,
+      };
+    } catch (error: any) {
+      console.error('[CustomAdapter] Failed to link account:', error);
+      throw error;
+    }
+  },
+  async createSession(session: any) {
+    // 生成 session ID（确保不为 null）
+    const sessionId = randomUUID();
+    
+    console.log('[CustomAdapter] Creating session:', {
+      sessionId,
+      userId: session.userId,
+      sessionToken: session.sessionToken.substring(0, 10) + '...',
+    });
+    
+    try {
+      await db.query(
+        `INSERT INTO "sessions" (id, "sessionToken", "userId", expires)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          sessionId,
+          session.sessionToken,
+          session.userId,
+          session.expires,
+        ]
+      );
+
+      console.log('[CustomAdapter] Session created successfully');
+
+      const result = await db.query(
+        'SELECT * FROM "sessions" WHERE id = $1',
+        [sessionId]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('Failed to create session');
+      }
+
+      const createdSession = result.rows[0];
+      return {
+        id: createdSession.id,
+        sessionToken: createdSession.sessionToken,
+        userId: createdSession.userId,
+        expires: new Date(createdSession.expires),
+      };
+    } catch (error: any) {
+      console.error('[CustomAdapter] Failed to create session:', error);
+      throw error;
+    }
+  },
 };
 
 export const authOptions: AuthOptions = {
@@ -116,6 +203,7 @@ export const authOptions: AuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      allowDangerousEmailAccountLinking: true,
     }),
     // Configure Email provider for passwordless login.
     EmailProvider({
@@ -125,6 +213,7 @@ export const authOptions: AuthOptions = {
         console.log(`Sign-in link for ${email}: ${url}`);
       },
       from: "no-reply@example.com", // This is required but not used when overriding sendVerificationRequest.
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
   session: {

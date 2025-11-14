@@ -54,6 +54,9 @@ if (!connectionString) {
 
 const pool = new Pool({
   connectionString,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
 // Schema 文件路径（按执行顺序）
