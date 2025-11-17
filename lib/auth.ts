@@ -213,7 +213,6 @@ export const authOptions: AuthOptions = {
         console.log(`Sign-in link for ${email}: ${url}`);
       },
       from: "no-reply@example.com", // This is required but not used when overriding sendVerificationRequest.
-      allowDangerousEmailAccountLinking: true,
     }),
   ],
   session: {
